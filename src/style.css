@@ -65,38 +65,48 @@ body { font-family: var(--font-ui); color: var(--cream); -webkit-font-smoothing:
 /* ── Nameplate ───────────────────────── */
 #nameplate {
   position: absolute;
-  top: 28px; left: 32px;
+  top: 24px; left: 24px;
   pointer-events: none;
   z-index: 10;
   user-select: none;
+  background: rgba(7, 18, 11, 0.52);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 18px;
 }
 #nameplate h1 {
   font-family: var(--font-head);
-  font-size: clamp(1.3rem, 2.6vw, 2rem);
+  font-size: clamp(1.15rem, 2.4vw, 1.85rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--cream);
-  text-shadow: 0 2px 24px rgba(0,0,0,0.7);
   line-height: 1.1;
 }
 #nameplate .subtitle {
-  font-size: 0.76rem;
-  color: var(--muted);
-  letter-spacing: 0.06em;
-  margin-top: 4px;
+  font-size: 0.72rem;
+  color: var(--green);
+  letter-spacing: 0.07em;
+  margin-top: 5px;
+  font-weight: 500;
 }
 
 /* ── Scene hint ──────────────────────── */
 #scene-hint {
   position: absolute;
-  bottom: 24px; left: 50%;
+  bottom: 20px; left: 50%;
   transform: translateX(-50%);
-  font-size: 0.68rem;
-  color: rgba(240,236,228,0.35);
-  letter-spacing: 0.07em;
+  font-size: 0.67rem;
+  color: rgba(240,236,228,0.32);
+  letter-spacing: 0.06em;
   pointer-events: none;
   white-space: nowrap;
-  transition: opacity 0.4s;
+  transition: opacity 0.5s;
+  background: rgba(7,18,11,0.4);
+  backdrop-filter: blur(8px);
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 #scene-hint.hidden { opacity: 0; }
 
@@ -120,7 +130,7 @@ body { font-family: var(--font-ui); color: var(--cream); -webkit-font-smoothing:
 }
 
 .hotspot-ring {
-  width: 16px; height: 16px;
+  width: 18px; height: 18px;
   border: 2px solid rgba(34, 197, 94, 0.7);
   border-radius: 50%;
   background: rgba(34, 197, 94, 0.12);
@@ -444,23 +454,111 @@ body { font-family: var(--font-ui); color: var(--cream); -webkit-font-smoothing:
 }
 
 /* ── MOBILE ──────────────────────────── */
-@media (max-width: 600px) {
-  #nameplate { top: 18px; left: 18px; }
-  #nameplate h1 { font-size: 1.25rem; }
+@media (max-width: 680px) {
 
-  /* Panel slides up from bottom on mobile */
+  /* Nameplate — compact, always legible */
+  #nameplate {
+    top: 14px; left: 14px;
+    padding: 9px 14px;
+  }
+  #nameplate h1   { font-size: 1.15rem; }
+  #nameplate .subtitle { font-size: 0.68rem; }
+
+  /* Hint — two parts separated onto two lines */
+  #scene-hint {
+    font-size: 0.62rem;
+    white-space: normal;
+    text-align: center;
+    width: calc(100vw - 32px);
+    bottom: 14px;
+    line-height: 1.5;
+  }
+
+  /* Larger hotspot rings for fingers */
+  .hotspot-ring {
+    width: 24px; height: 24px;
+    border-width: 2.5px;
+  }
+  .hotspot-label {
+    font-size: 0.6rem;
+    padding: 3px 9px;
+    letter-spacing: 0.1em;
+  }
+
+  /* Panel — full-width bottom sheet */
   #overlay-panel {
     top: auto; bottom: 0; right: 0;
     width: 100vw;
-    height: 72dvh;
+    height: 80dvh;          /* taller to fit Projects' 4 cards */
+    max-height: 80dvh;
     border-left: none;
     border-top: 1px solid var(--border);
-    border-radius: 18px 18px 0 0;
+    border-radius: 20px 20px 0 0;
     transform: translateY(100%);
-    padding: 20px 18px 32px;
+    padding: 0 0 env(safe-area-inset-bottom, 20px);
   }
   #overlay-panel.open { transform: translateY(0); }
 
-  .fact-grid { grid-template-columns: repeat(3,1fr); }
-  .panel-header h2 { font-size: 1.3rem; }
+  /* Drag-handle pill at top of sheet */
+  #overlay-panel::before {
+    content: '';
+    display: block;
+    width: 40px; height: 4px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 2px;
+    margin: 12px auto 0;
+    flex-shrink: 0;
+  }
+
+  /* Close button — bigger tap target */
+  #close-btn {
+    top: 10px; right: 14px;
+    width: 42px; height: 42px;
+  }
+
+  /* Scrollable inner content with safe top padding */
+  .panel-section {
+    padding: 16px 18px 28px;
+    overflow-y: auto;
+  }
+
+  .panel-header        { margin-bottom: 16px; padding-bottom: 12px; }
+  .panel-header h2     { font-size: 1.35rem; }
+  .panel-body          { font-size: 0.83rem; }
+
+  .fact-grid           { grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .fact                { padding: 10px 6px; }
+  .fact-n              { font-size: 1.15rem; }
+
+  .plain-list          { gap: 10px; }
+  .plain-list li       { font-size: 0.85rem; }
+
+  .lang-row            { padding: 8px 12px; }
+  .lang-name           { font-size: 0.85rem; }
+
+  .proj-card           { padding: 14px; margin-bottom: 10px; }
+  .proj-top h3         { font-size: 0.9rem; }
+
+  .contact-item        { padding: 10px 12px; gap: 12px; font-size: 0.82rem; }
+  .chex                { width: 34px; height: 34px; }
+}
+
+/* Landscape mobile / small tablets — keep full-screen look */
+@media (max-height: 500px) and (orientation: landscape) {
+  #overlay-panel {
+    top: 0; right: 0; bottom: auto;
+    width: min(var(--panel-w), 90vw);
+    height: 100dvh;
+    border-radius: 0;
+    border-top: none;
+    border-left: 1px solid var(--border);
+    transform: translateX(100%);
+    padding: 16px 22px 20px;
+  }
+  #overlay-panel.open  { transform: translateX(0); }
+  #overlay-panel::before { display: none; }
+
+  #nameplate           { top: 10px; left: 12px; padding: 7px 12px; }
+  #nameplate h1        { font-size: 1rem; }
+  #nameplate .subtitle { display: none; }
 }

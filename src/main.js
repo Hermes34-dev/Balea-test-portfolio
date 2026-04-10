@@ -47,8 +47,10 @@ controls.enableDamping   = true;
 controls.dampingFactor   = 0.055;
 controls.minDistance     = 7;
 controls.maxDistance     = 22;
-controls.maxPolarAngle   = Math.PI * 0.80;
-controls.minPolarAngle   = Math.PI * 0.06;
+controls.maxPolarAngle   = Math.PI * 0.74;
+controls.minPolarAngle   = Math.PI * 0.08;
+controls.minAzimuthAngle = -Math.PI * 0.36;  // ≈ −65° — keeps box always visible
+controls.maxAzimuthAngle =  Math.PI * 0.36;  // ≈  +65°
 controls.enablePan       = false;
 controls.enabled         = false; // enabled after intro
 
@@ -66,14 +68,45 @@ composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
 // ═══════════════════════════════════════════
+//  SQUARE GRID TEXTURE helper
+//  Draws a single tile (white fill + subtle border).
+//  Tiling at repeat=BOX gives one 1-unit square per world unit.
+// ═══════════════════════════════════════════
+function makeGridTex(bgCss, lineCss, repeat = BOX) {
+  const S   = 256;
+  const cv  = document.createElement('canvas');
+  cv.width  = S;
+  cv.height = S;
+  const ctx = cv.getContext('2d');
+
+  ctx.fillStyle = bgCss;
+  ctx.fillRect(0, 0, S, S);
+
+  // inset border so tile edges form a visible grid when tiled
+  ctx.strokeStyle = lineCss;
+  ctx.lineWidth   = 2;
+  ctx.strokeRect(1, 1, S - 2, S - 2);
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS     = tex.wrapT   = THREE.RepeatWrapping;
+  tex.repeat.set(repeat, repeat);
+  tex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+  return tex;
+}
+
+// ═══════════════════════════════════════════
 //  CORNELL BOX — walls
 // ═══════════════════════════════════════════
 function buildWalls() {
   const T = 0.18;
 
-  const mCream = new THREE.MeshStandardMaterial({ color: COL.cream,     roughness: 0.90, metalness: 0 });
-  const mRed   = new THREE.MeshStandardMaterial({ color: COL.redWall,   roughness: 0.88, metalness: 0 });
-  const mGreen = new THREE.MeshStandardMaterial({ color: COL.greenWall, roughness: 0.88, metalness: 0 });
+  const texCream = makeGridTex('#f0ece4', 'rgba(120,110,95,0.22)');
+  const texRed   = makeGridTex('#c42b22', 'rgba(80, 8,  4, 0.30)');
+  const texGreen = makeGridTex('#1e8a3c', 'rgba(8,  50, 18,0.30)');
+
+  const mCream = new THREE.MeshStandardMaterial({ map: texCream, roughness: 0.90, metalness: 0 });
+  const mRed   = new THREE.MeshStandardMaterial({ map: texRed,   roughness: 0.88, metalness: 0 });
+  const mGreen = new THREE.MeshStandardMaterial({ map: texGreen, roughness: 0.88, metalness: 0 });
 
   const wall = (w, h, d, x, y, z, mat) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
