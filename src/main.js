@@ -376,9 +376,12 @@ const _mouse     = new THREE.Vector2();
 let   hoveredItem = null;
 
 function getHit(clientX, clientY) {
+  // Use getBoundingClientRect so coords are correct on mobile
+  // even when browser chrome / safe-areas affect innerWidth/innerHeight
+  const rect = canvas.getBoundingClientRect();
   _mouse.set(
-    (clientX / innerWidth)  * 2 - 1,
-    -(clientY / innerHeight) * 2 + 1
+    ((clientX - rect.left) / rect.width)  *  2 - 1,
+    ((clientY - rect.top)  / rect.height) * -2 + 1
   );
   raycaster.setFromCamera(_mouse, camera);
   const hits = raycaster.intersectObjects(hoverables);
@@ -410,14 +413,25 @@ canvas.addEventListener('pointermove', e => {
 });
 
 // Click / tap — distinguish from orbit drag
-let pointerMoved = false;
-canvas.addEventListener('pointerdown', () => { pointerMoved = false; });
-canvas.addEventListener('pointermove', e => { if (e.buttons) pointerMoved = true; });
+// Use a pixel threshold so micro-movements on mobile tap don't count as drags.
+const DRAG_THRESHOLD = 12; // px — safe for fingertip jitter
+let _pdX = 0, _pdY = 0, pointerMoved = false;
+
+canvas.addEventListener('pointerdown', e => {
+  _pdX = e.clientX; _pdY = e.clientY;
+  pointerMoved = false;
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (e.buttons && Math.hypot(e.clientX - _pdX, e.clientY - _pdY) > DRAG_THRESHOLD) {
+    pointerMoved = true;
+  }
+});
+
 canvas.addEventListener('pointerup', e => {
   if (pointerMoved || panelOpen) return;
   const hit = getHit(e.clientX, e.clientY);
   if (hit) {
-    // Quick scale pulse on click
     clickPulse(hit.mesh);
     openPanel(hit.section);
   }
