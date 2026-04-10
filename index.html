@@ -3,292 +3,212 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0d2416" />
+  <meta name="theme-color" content="#07120b" />
   <title>Alejandro Balea · C++ Software Developer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
 
-  <!-- Loading screen -->
+  <!-- Loading -->
   <div id="loading-screen">
     <div class="loading-inner">
-      <div class="loading-bunny"></div>
-      <p>Initialising scene…</p>
+      <div class="loading-gem"></div>
+      <p>Rendering scene…</p>
     </div>
   </div>
 
-  <div id="app">
+  <!-- Scene container (full screen) -->
+  <div id="scene-container">
+    <canvas id="three-canvas"></canvas>
 
-    <!-- ── LEFT · Three.js canvas ── -->
-    <div id="canvas-container">
-      <canvas id="three-canvas"></canvas>
+    <!-- Floating hotspot labels (positioned by JS) -->
+    <div id="hotspots" aria-hidden="true"></div>
 
-      <!-- HUD overlay -->
-      <div id="hud">
-        <div id="hud-left">
-          <div class="hud-card">
-            <span class="hud-label">BALLS</span>
-            <span id="ball-count" class="hud-value">0</span>
-          </div>
-          <div class="hud-card score-card">
-            <span class="hud-label">SCORE</span>
-            <span id="score-value" class="hud-value">0</span>
-          </div>
-          <div class="hud-card">
-            <span class="hud-label">BEST</span>
-            <span id="best-score" class="hud-value">0</span>
-          </div>
-        </div>
+    <!-- Always-visible nameplate (top-left) -->
+    <header id="nameplate">
+      <h1>Alejandro Balea</h1>
+      <p class="subtitle">C++ Software Developer</p>
+    </header>
 
-        <div id="hud-right">
-          <button id="gravity-btn" class="hud-btn" title="Toggle gravity">🌍</button>
-          <button id="reset-btn"   class="hud-btn" title="Clear all balls">🗑</button>
-          <button id="explode-btn" class="hud-btn" title="Explode!">💥</button>
-        </div>
+    <!-- Bottom hint -->
+    <div id="scene-hint">Drag to orbit &nbsp;·&nbsp; Click objects to explore</div>
+  </div>
+
+  <!-- Slide-in overlay panel -->
+  <aside id="overlay-panel" aria-hidden="true">
+    <button id="close-btn" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <!-- ABOUT -->
+    <div class="panel-section" data-section="about">
+      <div class="panel-header">
+        <span class="panel-tag">01</span>
+        <h2>About</h2>
       </div>
-
-      <!-- Hint ribbon -->
-      <div id="hint-bar">
-        <span id="hint-text">Tap · Click to throw balls &nbsp;·&nbsp; Drag to orbit &nbsp;·&nbsp; Hit the ◆ targets for points</span>
+      <p class="panel-body">
+        Passionate C++ developer specialising in real-time graphics,
+        physics simulation, and game-engine architecture. I build
+        high-performance 3D systems from first principles — no black boxes.
+      </p>
+      <p class="panel-body">
+        Based in Spain. The Cornell Box on my business card? I wrote the
+        path tracer that rendered it.
+      </p>
+      <div class="fact-grid">
+        <div class="fact">
+          <span class="fact-n">5+</span>
+          <span class="fact-l">Years C++</span>
+        </div>
+        <div class="fact">
+          <span class="fact-n">3D</span>
+          <span class="fact-l">Graphics</span>
+        </div>
+        <div class="fact">
+          <span class="fact-n">🇪🇸</span>
+          <span class="fact-l">Spain</span>
+        </div>
       </div>
     </div>
 
-    <!-- ── RIGHT · Portfolio panel ── -->
-    <div id="info-panel">
-
-      <!-- Branding top bar -->
-      <div id="panel-brand">
-        <div class="brand-dot"></div>
-        <span>alejandrobalea.com</span>
+    <!-- SKILLS -->
+    <div class="panel-section" data-section="skills">
+      <div class="panel-header">
+        <span class="panel-tag">02</span>
+        <h2>Skills</h2>
       </div>
 
-      <!-- Scrollable content area -->
-      <div id="panel-scroll">
+      <h3 class="list-heading">Expertise</h3>
+      <ul class="plain-list">
+        <li>Real-time Rendering</li>
+        <li>Physics Simulation</li>
+        <li>Ray Tracing &amp; Path Tracing</li>
+        <li>Game Engine Architecture</li>
+        <li>Shader Programming (GLSL)</li>
+        <li>3D Mathematics</li>
+        <li>Multithreading &amp; SIMD</li>
+        <li>Asset Pipelines</li>
+        <li>Entity–Component–System (ECS)</li>
+      </ul>
 
-        <!-- HERO -->
-        <section id="section-hero" class="panel-section active">
-          <div class="hero-name">
-            <h1>Alejandro<br/>Balea</h1>
-            <p class="hero-title">C++ Software Developer</p>
+      <h3 class="list-heading" style="margin-top:2rem">Programming Languages</h3>
+      <div class="lang-table">
+        <div class="lang-row">
+          <span class="lang-name">C++</span>
+          <span class="lang-level lvl-native">Native</span>
+        </div>
+        <div class="lang-row">
+          <span class="lang-name">GLSL</span>
+          <span class="lang-level lvl-c1">C1</span>
+        </div>
+        <div class="lang-row">
+          <span class="lang-name">CMake</span>
+          <span class="lang-level lvl-b2">B2</span>
+        </div>
+        <div class="lang-row">
+          <span class="lang-name">Python</span>
+          <span class="lang-level lvl-b2">B2</span>
+        </div>
+        <div class="lang-row">
+          <span class="lang-name">JavaScript</span>
+          <span class="lang-level lvl-b1">B1</span>
+        </div>
+        <div class="lang-row">
+          <span class="lang-name">Lua</span>
+          <span class="lang-level lvl-a2">A2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECTS -->
+    <div class="panel-section" data-section="projects">
+      <div class="panel-header">
+        <span class="panel-tag">03</span>
+        <h2>Projects</h2>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-top">
+          <h3>Cornell Box Path Tracer</h3>
+          <span class="proj-badge done">Done</span>
+        </div>
+        <p>Monte Carlo path tracer in C++. Generates the image on my business card — global illumination, soft shadows, caustics.</p>
+        <div class="proj-chips"><span>C++</span><span>Monte Carlo</span><span>BVH</span></div>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-top">
+          <h3>Custom Physics Engine</h3>
+          <span class="proj-badge done">Done</span>
+        </div>
+        <p>Real-time rigid-body physics. GJK/EPA collision detection, sequential impulse solver, friction &amp; restitution.</p>
+        <div class="proj-chips"><span>C++</span><span>GJK/EPA</span><span>Impulse</span></div>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-top">
+          <h3>3D Game Engine</h3>
+          <span class="proj-badge wip">In progress</span>
+        </div>
+        <p>Full engine from scratch — custom OpenGL renderer, ECS, asset pipeline, scripting bridge, physics integration.</p>
+        <div class="proj-chips"><span>C++20</span><span>OpenGL</span><span>ECS</span><span>Lua</span></div>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-top">
+          <h3>GPU Terrain Generator</h3>
+          <span class="proj-badge done">Done</span>
+        </div>
+        <p>Procedural terrain via compute shaders — multi-octave noise, hydraulic erosion, real-time LOD streaming.</p>
+        <div class="proj-chips"><span>C++</span><span>Compute</span><span>LOD</span></div>
+      </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="panel-section" data-section="contact">
+      <div class="panel-header">
+        <span class="panel-tag">04</span>
+        <h2>Contact</h2>
+      </div>
+      <p class="panel-body">Open to freelance, full-time roles, and collaboration on graphics or simulation work.</p>
+
+      <div class="contact-stack">
+        <a class="contact-item" href="tel:+34638793403">
+          <span class="chex">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+          </span>
+          <div class="cinfo">
+            <span class="clabel">Phone</span>
+            <span>+34 638 79 34 03</span>
           </div>
-
-          <div class="contact-list">
-            <a class="contact-row" href="tel:+34638793403">
-              <span class="contact-hex">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
-              </span>
-              <span>+34 638 79 34 03</span>
-            </a>
-            <a class="contact-row" href="mailto:contact.AlejandroBalea@gmail.com">
-              <span class="contact-hex">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              </span>
-              <span>contact.AlejandroBalea@gmail.com</span>
-            </a>
-            <a class="contact-row" href="https://www.alejandrobalea.com" target="_blank" rel="noopener">
-              <span class="contact-hex">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-              </span>
-              <span>www.alejandrobalea.com</span>
-            </a>
+        </a>
+        <a class="contact-item" href="mailto:contact.AlejandroBalea@gmail.com">
+          <span class="chex">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </span>
+          <div class="cinfo">
+            <span class="clabel">Email</span>
+            <span>contact.AlejandroBalea@gmail.com</span>
           </div>
-
-          <p class="hero-cta">🎯 Hit the glowing targets inside the Cornell Box to score points!</p>
-        </section>
-
-        <!-- ABOUT -->
-        <section id="section-about" class="panel-section">
-          <h2 class="section-heading">About</h2>
-          <p class="section-body">
-            Passionate C++ developer specialising in real-time graphics,
-            physics simulation, and game-engine architecture.
-            I turn complex mathematical concepts into beautiful,
-            high-performance interactive experiences.
-          </p>
-          <p class="section-body">
-            Based in Spain, I combine rigorous low-level engineering with a
-            creative eye — from crafting path tracers that produce
-            photorealistic Cornell Box renders to shipping
-            production-quality 3D systems.
-          </p>
-
-          <div class="about-facts">
-            <div class="fact-card">
-              <span class="fact-num">5+</span>
-              <span class="fact-label">Years in C++</span>
-            </div>
-            <div class="fact-card">
-              <span class="fact-num">3D</span>
-              <span class="fact-label">Graphics Expert</span>
-            </div>
-            <div class="fact-card">
-              <span class="fact-num">🇪🇸</span>
-              <span class="fact-label">Spain</span>
-            </div>
+        </a>
+        <a class="contact-item" href="https://www.alejandrobalea.com" target="_blank" rel="noopener">
+          <span class="chex">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          </span>
+          <div class="cinfo">
+            <span class="clabel">Website</span>
+            <span>www.alejandrobalea.com</span>
           </div>
+        </a>
+      </div>
+    </div>
 
-          <p class="section-body" style="margin-top:1.2rem;font-style:italic;opacity:0.7;">
-            "The Cornell Box on my business card? I built the path tracer that rendered it."
-          </p>
-        </section>
+  </aside>
 
-        <!-- SKILLS -->
-        <section id="section-skills" class="panel-section">
-          <h2 class="section-heading">Skills</h2>
-
-          <div class="skill-list">
-            <div class="skill-row">
-              <span class="skill-name">C++ 17/20</span>
-              <div class="skill-bar"><div class="skill-fill" style="width:96%"></div></div>
-              <span class="skill-pct">96%</span>
-            </div>
-            <div class="skill-row">
-              <span class="skill-name">OpenGL / GLSL</span>
-              <div class="skill-bar"><div class="skill-fill" style="width:90%"></div></div>
-              <span class="skill-pct">90%</span>
-            </div>
-            <div class="skill-row">
-              <span class="skill-name">Physics Simulation</span>
-              <div class="skill-bar"><div class="skill-fill" style="width:88%"></div></div>
-              <span class="skill-pct">88%</span>
-            </div>
-            <div class="skill-row">
-              <span class="skill-name">Ray Tracing / Path Tracing</span>
-              <div class="skill-bar"><div class="skill-fill" style="width:85%"></div></div>
-              <span class="skill-pct">85%</span>
-            </div>
-            <div class="skill-row">
-              <span class="skill-name">Game Engine Architecture</span>
-              <div class="skill-bar"><div class="skill-fill" style="width:82%"></div></div>
-              <span class="skill-pct">82%</span>
-            </div>
-            <div class="skill-row">
-              <span class="skill-name">Vulkan</span>
-              <div class="skill-bar"><div class="skill-fill" style="width:72%"></div></div>
-              <span class="skill-pct">72%</span>
-            </div>
-            <div class="skill-row">
-              <span class="skill-name">Three.js / WebGL</span>
-              <div class="skill-bar"><div class="skill-fill" style="width:75%"></div></div>
-              <span class="skill-pct">75%</span>
-            </div>
-          </div>
-
-          <div class="tag-cloud">
-            <span class="tag">3D Math</span>
-            <span class="tag">ECS</span>
-            <span class="tag">BVH</span>
-            <span class="tag">SIMD</span>
-            <span class="tag">CMake</span>
-            <span class="tag">Python</span>
-            <span class="tag">Git</span>
-            <span class="tag">Linux</span>
-          </div>
-        </section>
-
-        <!-- PROJECTS -->
-        <section id="section-projects" class="panel-section">
-          <h2 class="section-heading">Projects</h2>
-
-          <div class="project-card">
-            <div class="project-top">
-              <h3>Cornell Box Path Tracer</h3>
-              <span class="proj-status">✓ Complete</span>
-            </div>
-            <p>Monte Carlo path tracer in C++ that generated the very image on my business card — global illumination, soft shadows, and caustics in a weekend.</p>
-            <div class="proj-tags">
-              <span>C++</span><span>Monte Carlo</span><span>BVH</span><span>HDR</span>
-            </div>
-          </div>
-
-          <div class="project-card">
-            <div class="project-top">
-              <h3>Custom Physics Engine</h3>
-              <span class="proj-status">✓ Complete</span>
-            </div>
-            <p>Real-time rigid-body physics with GJK/EPA collision detection, sequential impulse solver, constraints, and friction. Powers the simulation you see right now.</p>
-            <div class="proj-tags">
-              <span>C++</span><span>GJK/EPA</span><span>Impulse Solver</span>
-            </div>
-          </div>
-
-          <div class="project-card">
-            <div class="project-top">
-              <h3>3D Game Engine</h3>
-              <span class="proj-status active">In Progress</span>
-            </div>
-            <p>Full engine from scratch — custom OpenGL renderer, ECS architecture, asset pipeline, scripting bridge, and physics integration.</p>
-            <div class="proj-tags">
-              <span>C++20</span><span>OpenGL</span><span>ECS</span><span>Lua</span>
-            </div>
-          </div>
-
-          <div class="project-card">
-            <div class="project-top">
-              <h3>GPU Terrain Generator</h3>
-              <span class="proj-status">✓ Complete</span>
-            </div>
-            <p>Procedural terrain using compute shaders — multi-octave Perlin noise, hydraulic erosion simulation, and real-time LOD mesh streaming.</p>
-            <div class="proj-tags">
-              <span>C++</span><span>GLSL Compute</span><span>LOD</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- CONTACT -->
-        <section id="section-contact" class="panel-section">
-          <h2 class="section-heading">Contact</h2>
-          <p class="section-body">Open to freelance projects, full-time roles, and collaboration on graphics or simulation work. Let's build something.</p>
-
-          <div class="contact-list contact-list--large">
-            <a class="contact-row" href="tel:+34638793403">
-              <span class="contact-hex">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
-              </span>
-              <div class="contact-detail">
-                <span class="contact-label">Phone</span>
-                <span>+34 638 79 34 03</span>
-              </div>
-            </a>
-            <a class="contact-row" href="mailto:contact.AlejandroBalea@gmail.com">
-              <span class="contact-hex">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              </span>
-              <div class="contact-detail">
-                <span class="contact-label">Email</span>
-                <span>contact.AlejandroBalea@gmail.com</span>
-              </div>
-            </a>
-            <a class="contact-row" href="https://www.alejandrobalea.com" target="_blank" rel="noopener">
-              <span class="contact-hex">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-              </span>
-              <div class="contact-detail">
-                <span class="contact-label">Website</span>
-                <span>www.alejandrobalea.com</span>
-              </div>
-            </a>
-          </div>
-        </section>
-
-      </div><!-- /panel-scroll -->
-
-      <!-- Navigation tabs -->
-      <nav id="portfolio-nav">
-        <button class="nav-btn active" data-section="hero">Home</button>
-        <button class="nav-btn" data-section="about">About</button>
-        <button class="nav-btn" data-section="skills">Skills</button>
-        <button class="nav-btn" data-section="projects">Projects</button>
-        <button class="nav-btn" data-section="contact">Contact</button>
-      </nav>
-
-    </div><!-- /info-panel -->
-  </div><!-- /app -->
-
-  <!-- Score burst DOM element (reused) -->
-  <div id="score-burst"></div>
+  <!-- Backdrop -->
+  <div id="backdrop"></div>
 
   <script type="module" src="/src/main.js"></script>
 </body>
