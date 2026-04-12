@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 // ═══════════════════════════════════════════
@@ -126,61 +127,91 @@ function buildWalls() {
 
 // ═══════════════════════════════════════════
 //  CORNELL BOX OBJECTS — interactable meshes
+//
+//  Classic CG reference models, each mapped to a portfolio section:
+//   Utah Teapot      → Projects  (the most iconic CG test object)
+//   Torus Knot       → Skills    (mathematical elegance)
+//   Crystal Gem      → About     (octahedron — clean, sharp)
+//   Dodecahedron     → Contact   (organic, approachable)
 // ═══════════════════════════════════════════
 const interactables = [];   // { mesh, section, hotspotEl, labelWorld }
 const hoverables    = [];   // mesh refs for raycaster
 
+/** Seat a mesh so its bounding-box bottom sits exactly on the floor. */
+function seatOnFloor(mesh) {
+  mesh.geometry.computeBoundingBox();
+  const bot = mesh.geometry.boundingBox.min.y;
+  mesh.position.y = -HALF - bot;   // floor_y − local_bottom
+}
+
+/** Compute world-space top of a mesh's bounding box (used for label anchors). */
+function topY(mesh) {
+  mesh.geometry.computeBoundingBox();
+  return mesh.position.y + mesh.geometry.boundingBox.max.y;
+}
+
 function buildObjects() {
-  // shared cream material
-  const mCream = new THREE.MeshStandardMaterial({ color: COL.cream, roughness: 0.88, metalness: 0 });
 
-  // ─ Tall box → Projects ─
-  const tallH = 3.2;
-  const tallBox = new THREE.Mesh(new THREE.BoxGeometry(1.6, tallH, 1.6), mCream);
-  tallBox.position.set(-1.6, -HALF + tallH / 2, -1.5);
-  tallBox.rotation.y = -0.28;
-  tallBox.castShadow = true; tallBox.receiveShadow = true;
-  tallBox.userData = { section: 'projects', label: 'Projects',
-    labelWorld: new THREE.Vector3(-1.6, -HALF + tallH + 0.7, -1.5) };
-  scene.add(tallBox);
-
-  // ─ Short box → Contact ─
-  const shortH = 1.6;
-  const shortBox = new THREE.Mesh(new THREE.BoxGeometry(1.6, shortH, 1.6), mCream);
-  shortBox.position.set(1.5, -HALF + shortH / 2, -1.6);
-  shortBox.rotation.y = 0.26;
-  shortBox.castShadow = true; shortBox.receiveShadow = true;
-  shortBox.userData = { section: 'contact', label: 'Contact',
-    labelWorld: new THREE.Vector3(1.5, -HALF + shortH + 0.7, -1.6) };
-  scene.add(shortBox);
-
-  // ─ Large sphere → Skills ─
-  const largeSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(1.15, 48, 32),
-    new THREE.MeshStandardMaterial({ color: 0xd4c8b0, metalness: 0.08, roughness: 0.38 })
+  // ─── 1. Utah Teapot → Projects ───────────────────────────────────────
+  const teapotGeo = new TeapotGeometry(1.25, 10);
+  const teapot = new THREE.Mesh(teapotGeo,
+    new THREE.MeshStandardMaterial({
+      color: 0xeae2d5, roughness: 0.18, metalness: 0.04,
+    })
   );
-  largeSphere.position.set(-1.4, -HALF + 1.15, 0.6);
-  largeSphere.castShadow = true; largeSphere.receiveShadow = true;
-  largeSphere.userData = { section: 'skills', label: 'Skills & Languages',
-    labelWorld: new THREE.Vector3(-1.4, -HALF + 2.6, 0.6) };
-  scene.add(largeSphere);
+  teapot.rotation.y = -0.4;
+  teapot.position.set(-1.8, 0, -1.3);
+  seatOnFloor(teapot);
+  teapot.castShadow = true; teapot.receiveShadow = true;
+  teapot.userData = { section: 'projects', label: 'Projects',
+    labelWorld: new THREE.Vector3(-1.8, topY(teapot) + 0.35, -1.3) };
+  scene.add(teapot);
 
-  // ─ Small sphere → About ─
-  const smallSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.75, 36, 24),
-    new THREE.MeshStandardMaterial({ color: 0xd8c4a8, metalness: 0, roughness: 0.82 })
+  // ─── 2. Torus Knot → Skills ─────────────────────────────────────────
+  const tkGeo = new THREE.TorusKnotGeometry(0.65, 0.22, 160, 18, 3, 2);
+  const torusKnot = new THREE.Mesh(tkGeo,
+    new THREE.MeshStandardMaterial({
+      color: 0xcac2b2, metalness: 0.88, roughness: 0.07,
+    })
   );
-  smallSphere.position.set(1.7, -HALF + 0.75, 0.8);
-  smallSphere.castShadow = true; smallSphere.receiveShadow = true;
-  smallSphere.userData = { section: 'about', label: 'About',
-    labelWorld: new THREE.Vector3(1.7, -HALF + 2.1, 0.8) };
-  scene.add(smallSphere);
+  torusKnot.position.set(-1.6, -HALF + 1.85, 0.6);
+  torusKnot.castShadow = true; torusKnot.receiveShadow = true;
+  torusKnot.userData = { section: 'skills', label: 'Skills & Languages',
+    labelWorld: new THREE.Vector3(-1.6, -HALF + 3.1, 0.6) };
+  scene.add(torusKnot);
 
-  [tallBox, shortBox, largeSphere, smallSphere].forEach(mesh => {
+  // ─── 3. Crystal Gem (Octahedron) → About ─────────────────────────────
+  const gemGeo = new THREE.OctahedronGeometry(0.88, 0);
+  const gem = new THREE.Mesh(gemGeo,
+    new THREE.MeshStandardMaterial({
+      color: 0xd6eaf8, metalness: 0.06, roughness: 0.03,
+      envMapIntensity: 1.2,
+    })
+  );
+  gem.position.set(1.75, -HALF + 1.55, 0.7);
+  gem.castShadow = true; gem.receiveShadow = true;
+  gem.userData = { section: 'about', label: 'About',
+    labelWorld: new THREE.Vector3(1.75, -HALF + 2.7, 0.7) };
+  scene.add(gem);
+
+  // ─── 4. Dodecahedron → Contact ───────────────────────────────────────
+  const dodecGeo = new THREE.DodecahedronGeometry(0.82, 0);
+  const dodec = new THREE.Mesh(dodecGeo,
+    new THREE.MeshStandardMaterial({
+      color: 0xe2ddd4, roughness: 0.65, metalness: 0.02,
+    })
+  );
+  dodec.position.set(1.6, -HALF + 1.2, -1.55);
+  dodec.castShadow = true; dodec.receiveShadow = true;
+  dodec.userData = { section: 'contact', label: 'Contact',
+    labelWorld: new THREE.Vector3(1.6, -HALF + 2.25, -1.55) };
+  scene.add(dodec);
+
+  // ─── Register all as interactables ───────────────────────────────────
+  [teapot, torusKnot, gem, dodec].forEach(mesh => {
     hoverables.push(mesh);
-    // Store original emissive per material for hover restore
     mesh.material = mesh.material.clone();
-    mesh.material.emissive    = new THREE.Color(0x000000);
+    mesh.material.emissive = new THREE.Color(0x000000);
     mesh.material.emissiveIntensity = 0;
 
     const el = createHotspot(mesh.userData.label);
@@ -188,7 +219,7 @@ function buildObjects() {
       labelWorld: mesh.userData.labelWorld, hotspotEl: el });
   });
 
-  return { tallBox, shortBox, largeSphere, smallSphere };
+  return { teapot, torusKnot, gem, dodec };
 }
 
 // ═══════════════════════════════════════════
@@ -498,6 +529,8 @@ function animate() {
   for (const a of objectAnims) {
     a.mesh.position.y = a.baseY + Math.sin(now * a.freq + a.phase) * a.amp;
     if (a.rotY) a.mesh.rotation.y += a.rotY;
+    if (a.rotX) a.mesh.rotation.x += a.rotX;
+    if (a.rotZ) a.mesh.rotation.z += a.rotZ;
   }
 
   // ── Bunny spin + bob ──
@@ -537,17 +570,19 @@ function animate() {
 //  INIT
 // ═══════════════════════════════════════════
 buildWalls();
-const { tallBox, shortBox, largeSphere, smallSphere } = buildObjects();
+const { teapot, torusKnot, gem, dodec } = buildObjects();
 buildBunny();
 buildLighting();
 buildDust();
 
-// Register per-object gentle bob animations
+// Per-object animation: bob amplitude + multi-axis rotation
+// Teapot sits on floor — bob is subtle so it doesn't clip
+// Torus Knot tumbles on all axes for maximum visual interest
 objectAnims.push(
-  { mesh: largeSphere, baseY: largeSphere.position.y, freq: 0.0007, phase: 0.0,  amp: 0.06, rotY: 0.003 },
-  { mesh: smallSphere, baseY: smallSphere.position.y, freq: 0.0009, phase: 1.2,  amp: 0.05, rotY: 0.004 },
-  { mesh: tallBox,     baseY: tallBox.position.y,     freq: 0.0005, phase: 2.4,  amp: 0.04, rotY: 0.001 },
-  { mesh: shortBox,    baseY: shortBox.position.y,    freq: 0.0006, phase: 0.8,  amp: 0.04, rotY: -0.0015 },
+  { mesh: teapot,    baseY: teapot.position.y,    freq: 0.0005, phase: 0.0, amp: 0.03, rotY:  0.006 },
+  { mesh: torusKnot, baseY: torusKnot.position.y, freq: 0.0007, phase: 1.5, amp: 0.12, rotY:  0.014, rotX: 0.007, rotZ: 0.004 },
+  { mesh: gem,       baseY: gem.position.y,        freq: 0.0009, phase: 3.0, amp: 0.10, rotY:  0.010, rotX: 0.005 },
+  { mesh: dodec,     baseY: dodec.position.y,      freq: 0.0006, phase: 4.5, amp: 0.08, rotY: -0.008, rotX: 0.003 },
 );
 
 animate();
