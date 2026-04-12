@@ -69,28 +69,30 @@ composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
 // ═══════════════════════════════════════════
-//  SQUARE GRID TEXTURE helper
-//  Draws a single tile (white fill + subtle border).
-//  Tiling at repeat=BOX gives one 1-unit square per world unit.
+//  CHECKERBOARD TEXTURE helper
+//  A 2×2 alternating-colour tile; repeat(4,4) on an 8-unit face
+//  produces 8×8 checker squares ≈ 1 world-unit each.
+//  NearestFilter keeps the edges crisp (no bilinear blurring).
 // ═══════════════════════════════════════════
-function makeGridTex(bgCss, lineCss, repeat = BOX) {
-  const S   = 256;
-  const cv  = document.createElement('canvas');
-  cv.width  = S;
-  cv.height = S;
+function makeCheckerTex(colorA, colorB) {
+  const S = 256;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
   const ctx = cv.getContext('2d');
 
-  ctx.fillStyle = bgCss;
-  ctx.fillRect(0, 0, S, S);
+  const h = S / 2;
+  ctx.fillStyle = colorA;
+  ctx.fillRect(0, 0, h, h);   // top-left
+  ctx.fillRect(h, h, h, h);   // bottom-right
 
-  // inset border so tile edges form a visible grid when tiled
-  ctx.strokeStyle = lineCss;
-  ctx.lineWidth   = 2;
-  ctx.strokeRect(1, 1, S - 2, S - 2);
+  ctx.fillStyle = colorB;
+  ctx.fillRect(h, 0, h, h);   // top-right
+  ctx.fillRect(0, h, h, h);   // bottom-left
 
   const tex = new THREE.CanvasTexture(cv);
   tex.wrapS     = tex.wrapT   = THREE.RepeatWrapping;
-  tex.repeat.set(repeat, repeat);
+  tex.repeat.set(4, 4);                                  // 8×8 tiles per face
+  tex.magFilter = THREE.NearestFilter;                   // pixel-crisp edges
   tex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
   return tex;
 }
@@ -101,9 +103,9 @@ function makeGridTex(bgCss, lineCss, repeat = BOX) {
 function buildWalls() {
   const T = 0.18;
 
-  const texCream = makeGridTex('#f0ece4', 'rgba(120,110,95,0.22)');
-  const texRed   = makeGridTex('#c42b22', 'rgba(80, 8,  4, 0.30)');
-  const texGreen = makeGridTex('#1e8a3c', 'rgba(8,  50, 18,0.30)');
+  const texCream = makeCheckerTex('#f0ece4', '#cec8bc');  // cream ↔ warm taupe
+  const texRed   = makeCheckerTex('#cc2e24', '#9e2218');  // bright red ↔ dark red
+  const texGreen = makeCheckerTex('#228a40', '#176c31');  // leaf green ↔ deep green
 
   const mCream = new THREE.MeshStandardMaterial({ map: texCream, roughness: 0.90, metalness: 0 });
   const mRed   = new THREE.MeshStandardMaterial({ map: texRed,   roughness: 0.88, metalness: 0 });
@@ -137,37 +139,73 @@ function buildWalls() {
 const interactables = [];   // { mesh, section, hotspotEl, labelWorld }
 const hoverables    = [];   // mesh refs for raycaster
 
-/** Seat a mesh so its bounding-box bottom sits exactly on the floor. */
-function seatOnFloor(mesh) {
+/** Place a mesh so its bounding-box bottom sits on surfaceY. */
+function seatOn(mesh, surfaceY) {
   mesh.geometry.computeBoundingBox();
-  const bot = mesh.geometry.boundingBox.min.y;
-  mesh.position.y = -HALF - bot;   // floor_y − local_bottom
+  mesh.position.y = surfaceY - mesh.geometry.boundingBox.min.y;
 }
 
-/** Compute world-space top of a mesh's bounding box (used for label anchors). */
+/** World Y of the top of a mesh's bounding box. */
 function topY(mesh) {
   mesh.geometry.computeBoundingBox();
   return mesh.position.y + mesh.geometry.boundingBox.max.y;
 }
 
+// ═══════════════════════════════════════════
+//  CLASSICAL PEDESTAL  (octagonal, 3-part)
+//  Returns the world-Y of the top surface.
+// ═══════════════════════════════════════════
+const pedestalMat = new THREE.MeshStandardMaterial({
+  color: 0xe8e4dc, roughness: 0.55, metalness: 0.01,
+});
+
+function buildPedestal(x, z, totalH = 2.4) {
+  const SEGS   = 8;          // octagonal cross-section
+  const baseH  = 0.18;
+  const capH   = 0.22;
+  const shaftH = totalH - baseH - capH;
+
+  const addPart = (rTop, rBot, h, yBot) => {
+    const m = new THREE.Mesh(
+      new THREE.CylinderGeometry(rTop, rBot, h, SEGS),
+      pedestalMat
+    );
+    m.position.set(x, yBot + h / 2, z);
+    m.castShadow = true; m.receiveShadow = true;
+    scene.add(m);
+  };
+
+  const y0 = -HALF;
+  addPart(0.60, 0.64, baseH,  y0);                        // plinth
+  addPart(0.30, 0.35, shaftH, y0 + baseH);                // shaft
+  addPart(0.53, 0.32, capH,   y0 + baseH + shaftH);       // capital
+
+  return y0 + totalH;   // top surface Y
+}
+
+// ═══════════════════════════════════════════
+//  CORNELL BOX OBJECTS — interactable meshes
+// ═══════════════════════════════════════════
 function buildObjects() {
 
-  // ─── 1. Utah Teapot → Projects ───────────────────────────────────────
-  const teapotGeo = new TeapotGeometry(1.25, 10);
+  // ─── 1. Utah Teapot on column → Projects ────────────────────────────
+  const pedestalTopL = buildPedestal(-1.8, -1.3, 2.4);
+
+  const teapotGeo = new TeapotGeometry(0.85, 10);
   const teapot = new THREE.Mesh(teapotGeo,
     new THREE.MeshStandardMaterial({
       color: 0xeae2d5, roughness: 0.18, metalness: 0.04,
     })
   );
-  teapot.rotation.y = -0.4;
+  teapot.rotation.y = -0.5;
   teapot.position.set(-1.8, 0, -1.3);
-  seatOnFloor(teapot);
+  seatOn(teapot, pedestalTopL);
   teapot.castShadow = true; teapot.receiveShadow = true;
   teapot.userData = { section: 'projects', label: 'Projects',
-    labelWorld: new THREE.Vector3(-1.8, topY(teapot) + 0.35, -1.3) };
+    labelWorld: new THREE.Vector3(-1.8, topY(teapot) + 0.4, -1.3) };
   scene.add(teapot);
 
-  // ─── 2. Torus Knot → Skills ─────────────────────────────────────────
+  // ─── 2. Torus Knot (floating) → Skills ──────────────────────────────
   const tkGeo = new THREE.TorusKnotGeometry(0.65, 0.22, 160, 18, 3, 2);
   const torusKnot = new THREE.Mesh(tkGeo,
     new THREE.MeshStandardMaterial({
@@ -180,12 +218,11 @@ function buildObjects() {
     labelWorld: new THREE.Vector3(-1.6, -HALF + 3.1, 0.6) };
   scene.add(torusKnot);
 
-  // ─── 3. Crystal Gem (Octahedron) → About ─────────────────────────────
+  // ─── 3. Crystal Gem / Octahedron (floating) → About ─────────────────
   const gemGeo = new THREE.OctahedronGeometry(0.88, 0);
   const gem = new THREE.Mesh(gemGeo,
     new THREE.MeshStandardMaterial({
       color: 0xd6eaf8, metalness: 0.06, roughness: 0.03,
-      envMapIntensity: 1.2,
     })
   );
   gem.position.set(1.75, -HALF + 1.55, 0.7);
@@ -194,17 +231,20 @@ function buildObjects() {
     labelWorld: new THREE.Vector3(1.75, -HALF + 2.7, 0.7) };
   scene.add(gem);
 
-  // ─── 4. Dodecahedron → Contact ───────────────────────────────────────
-  const dodecGeo = new THREE.DodecahedronGeometry(0.82, 0);
+  // ─── 4. Dodecahedron on column → Contact ────────────────────────────
+  const pedestalTopR = buildPedestal(1.7, -1.55, 2.0);
+
+  const dodecGeo = new THREE.DodecahedronGeometry(0.78, 0);
   const dodec = new THREE.Mesh(dodecGeo,
     new THREE.MeshStandardMaterial({
-      color: 0xe2ddd4, roughness: 0.65, metalness: 0.02,
+      color: 0xe2ddd4, roughness: 0.62, metalness: 0.02,
     })
   );
-  dodec.position.set(1.6, -HALF + 1.2, -1.55);
+  dodec.position.set(1.7, 0, -1.55);
+  seatOn(dodec, pedestalTopR);
   dodec.castShadow = true; dodec.receiveShadow = true;
   dodec.userData = { section: 'contact', label: 'Contact',
-    labelWorld: new THREE.Vector3(1.6, -HALF + 2.25, -1.55) };
+    labelWorld: new THREE.Vector3(1.7, topY(dodec) + 0.35, -1.55) };
   scene.add(dodec);
 
   // ─── Register all as interactables ───────────────────────────────────
@@ -249,17 +289,11 @@ function buildBunny() {
     shininess:    40,
   });
 
+  // Purely decorative — no hotspot, no raycasting target
   bunnyMesh = new THREE.Mesh(geo, mat);
   bunnyMesh.position.set(0, 2.4, -1.5);
   bunnyMesh.castShadow = true;
-  bunnyMesh.userData = { section: 'about', label: 'About',
-    labelWorld: new THREE.Vector3(0, 3.3, -1.5) };
   scene.add(bunnyMesh);
-
-  hoverables.push(bunnyMesh);
-  const el = createHotspot('About');
-  interactables.push({ mesh: bunnyMesh, section: 'about',
-    labelWorld: bunnyMesh.userData.labelWorld, hotspotEl: el });
 }
 
 // ═══════════════════════════════════════════
@@ -295,6 +329,14 @@ function buildLighting() {
   ceilLight.shadow.bias   = -0.001;
   ceilLight.shadow.radius = 3;
   scene.add(ceilLight);
+
+  // Cool blue fill from the open front face — mimics sky bounce light
+  // in a real path-traced Cornell Box render
+  const fillLight = new THREE.DirectionalLight(0x8ab4d4, 0.55);
+  fillLight.position.set(0, 1, 10);
+  fillLight.target.position.set(0, 0, 0);
+  scene.add(fillLight);
+  scene.add(fillLight.target);
 }
 
 // ═══════════════════════════════════════════
