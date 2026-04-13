@@ -4,6 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 // ═══════════════════════════════════════════
@@ -33,8 +34,16 @@ renderer.outputColorSpace   = THREE.SRGBColorSpace;
 renderer.toneMapping        = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.25;
 
+// Environment map — gives metallic + glass surfaces real reflections.
+// PMREMGenerator runs once at startup (not per-frame) so no runtime cost.
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+const envTexture = pmremGenerator.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+pmremGenerator.dispose();
+
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(COL.bg);
+scene.background    = new THREE.Color(COL.bg);
+scene.environment   = envTexture;
+scene.environmentIntensity = 0.28; // subtle — Cornell Box lights dominate
 
 // ═══════════════════════════════════════════
 //  CAMERA & CONTROLS
@@ -156,7 +165,7 @@ function topY(mesh) {
 //  Returns the world-Y of the top surface.
 // ═══════════════════════════════════════════
 const pedestalMat = new THREE.MeshStandardMaterial({
-  color: 0xe8e4dc, roughness: 0.55, metalness: 0.01,
+  color: 0xf0ebe2, roughness: 0.28, metalness: 0.04,
 });
 
 function buildPedestal(x, z, totalH = 2.4) {
@@ -189,12 +198,16 @@ function buildPedestal(x, z, totalH = 2.4) {
 function buildObjects() {
 
   // ─── 1. Utah Teapot on column → Projects ────────────────────────────
-  const pedestalTopL = buildPedestal(-1.8, -1.3, 2.4);
+  const pedestalTopL = buildPedestal(-1.8, -1.3, 3.2);   // taller column
 
   const teapotGeo = new TeapotGeometry(0.85, 10);
   const teapot = new THREE.Mesh(teapotGeo,
-    new THREE.MeshStandardMaterial({
-      color: 0xeae2d5, roughness: 0.18, metalness: 0.04,
+    new THREE.MeshPhysicalMaterial({
+      color: 0xfaf5f0,
+      roughness: 0.07,
+      metalness: 0.0,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.04,   // glazed white porcelain
     })
   );
   teapot.rotation.y = -0.5;
@@ -209,7 +222,7 @@ function buildObjects() {
   const tkGeo = new THREE.TorusKnotGeometry(0.65, 0.22, 160, 18, 3, 2);
   const torusKnot = new THREE.Mesh(tkGeo,
     new THREE.MeshStandardMaterial({
-      color: 0xcac2b2, metalness: 0.88, roughness: 0.07,
+      color: 0xd4a827, metalness: 0.97, roughness: 0.08,  // polished gold
     })
   );
   torusKnot.position.set(-1.6, -HALF + 1.85, 0.6);
@@ -221,8 +234,15 @@ function buildObjects() {
   // ─── 3. Crystal Gem / Octahedron (floating) → About ─────────────────
   const gemGeo = new THREE.OctahedronGeometry(0.88, 0);
   const gem = new THREE.Mesh(gemGeo,
-    new THREE.MeshStandardMaterial({
-      color: 0xd6eaf8, metalness: 0.06, roughness: 0.03,
+    new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      roughness: 0.0,
+      metalness: 0.05,
+      iridescence: 1.0,               // rainbow prismatic shift
+      iridescenceIOR: 1.9,
+      iridescenceThicknessRange: [100, 700],
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.0,        // perfect crystal facets
     })
   );
   gem.position.set(1.75, -HALF + 1.55, 0.7);
@@ -232,12 +252,18 @@ function buildObjects() {
   scene.add(gem);
 
   // ─── 4. Dodecahedron on column → Contact ────────────────────────────
-  const pedestalTopR = buildPedestal(1.7, -1.55, 2.0);
+  const pedestalTopR = buildPedestal(1.7, -1.55, 2.8);   // taller column
 
   const dodecGeo = new THREE.DodecahedronGeometry(0.78, 0);
   const dodec = new THREE.Mesh(dodecGeo,
-    new THREE.MeshStandardMaterial({
-      color: 0xe2ddd4, roughness: 0.62, metalness: 0.02,
+    new THREE.MeshPhysicalMaterial({
+      color: 0xddeeff,
+      roughness: 0.0,
+      metalness: 0.0,
+      transmission: 0.94,    // clear glass — shows Cornell Box walls through it
+      ior: 1.5,
+      thickness: 0.9,
+      transparent: true,
     })
   );
   dodec.position.set(1.7, 0, -1.55);
@@ -485,24 +511,12 @@ canvas.addEventListener('pointermove', e => {
   }
 });
 
-// Click / tap — distinguish from orbit drag
-// Use a pixel threshold so micro-movements on mobile tap don't count as drags.
-const DRAG_THRESHOLD = 12; // px — safe for fingertip jitter
-let _pdX = 0, _pdY = 0, pointerMoved = false;
-
-canvas.addEventListener('pointerdown', e => {
-  _pdX = e.clientX; _pdY = e.clientY;
-  pointerMoved = false;
-});
-
-canvas.addEventListener('pointermove', e => {
-  if (e.buttons && Math.hypot(e.clientX - _pdX, e.clientY - _pdY) > DRAG_THRESHOLD) {
-    pointerMoved = true;
-  }
-});
-
-canvas.addEventListener('pointerup', e => {
-  if (pointerMoved || panelOpen) return;
+// Click / tap — use the browser's native click event so mobile taps work
+// instantly without needing a long press.  The browser already filters
+// out drags (it won't fire 'click' after a pointer has moved significantly),
+// so we don't need our own drag-threshold tracking.
+canvas.addEventListener('click', e => {
+  if (panelOpen) return;
   const hit = getHit(e.clientX, e.clientY);
   if (hit) {
     clickPulse(hit.mesh);
