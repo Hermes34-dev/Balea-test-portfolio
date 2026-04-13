@@ -29,7 +29,7 @@ const canvas = document.getElementById('three-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled  = true;
-renderer.shadowMap.type     = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type     = THREE.PCFShadowMap;   // cheaper than PCFSoft
 renderer.outputColorSpace   = THREE.SRGBColorSpace;
 renderer.toneMapping        = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.25;
@@ -70,9 +70,10 @@ controls.enabled         = false; // enabled after intro
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 
+// Half-res bloom: 4× fewer pixels in every bloom pass, nearly invisible quality delta
 const bloom = new UnrealBloomPass(
-  new THREE.Vector2(innerWidth, innerHeight),
-  0.5, 0.5, 0.84
+  new THREE.Vector2(innerWidth * 0.5, innerHeight * 0.5),
+  0.55, 0.45, 0.86
 );
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
@@ -235,14 +236,11 @@ function buildObjects() {
   const gemGeo = new THREE.OctahedronGeometry(0.88, 0);
   const gem = new THREE.Mesh(gemGeo,
     new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
+      color: 0xaabbff,
       roughness: 0.0,
-      metalness: 0.05,
-      iridescence: 1.0,               // rainbow prismatic shift
-      iridescenceIOR: 1.9,
-      iridescenceThicknessRange: [100, 700],
+      metalness: 0.15,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.0,        // perfect crystal facets
+      clearcoatRoughness: 0.0,        // polished gem facets — no iridescence (cheaper)
     })
   );
   gem.position.set(1.75, -HALF + 1.55, 0.7);
@@ -257,13 +255,14 @@ function buildObjects() {
   const dodecGeo = new THREE.DodecahedronGeometry(0.78, 0);
   const dodec = new THREE.Mesh(dodecGeo,
     new THREE.MeshPhysicalMaterial({
-      color: 0xddeeff,
+      color: 0xcceeff,
       roughness: 0.0,
       metalness: 0.0,
-      transmission: 0.94,    // clear glass — shows Cornell Box walls through it
-      ior: 1.5,
-      thickness: 0.9,
+      opacity: 0.30,
       transparent: true,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.04,   // fake glass: transparent + clearcoat speculars
+      side: THREE.DoubleSide,     // show inner faces when looking through
     })
   );
   dodec.position.set(1.7, 0, -1.55);
@@ -351,7 +350,7 @@ function buildLighting() {
   ceilLight = new THREE.PointLight(COL.warmLight, 10, 22, 1.5);
   ceilLight.position.set(0, HALF - 0.5, 0);
   ceilLight.castShadow = true;
-  ceilLight.shadow.mapSize.set(1024, 1024);
+  ceilLight.shadow.mapSize.set(512, 512);  // halved — still smooth, half the VRAM
   ceilLight.shadow.bias   = -0.001;
   ceilLight.shadow.radius = 3;
   scene.add(ceilLight);
@@ -372,7 +371,7 @@ let dustPoints;
 let dustPositions;
 
 function buildDust() {
-  const count = 80;
+  const count = 40;
   dustPositions = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
     dustPositions[i*3]   = (Math.random()*2-1) * (HALF-0.6);
@@ -544,7 +543,7 @@ function onResize() {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
-  bloom.resolution.set(innerWidth, innerHeight);
+  bloom.resolution.set(innerWidth * 0.5, innerHeight * 0.5);
 }
 window.addEventListener('resize', onResize);
 onResize();
