@@ -239,22 +239,31 @@ function buildObjects() {
     labelWorld: new THREE.Vector3(-1.6, -HALF + 3.1, 0.6) };
   scene.add(torusKnot);
 
-  // ─── 3. Cornell-palette icosahedron (floating) → About ─────────────
-  // Each face painted in red / cream / green — the Cornell Box is his identity
-  // (it appears on his business card, he wrote the raytracer that rendered it).
-  let gemGeo = new THREE.IcosahedronGeometry(0.80, 0); // 20 flat faces
-  gemGeo = gemGeo.toNonIndexed();                       // unique verts per face
+  // ─── 3. Hexagonal crystal tower (LatheGeometry) → About ───────────────
+  // Six-sided faceted prism with a full-spectrum colour gradient
+  // from deep violet at the base to warm amber at the tip.
+  // LatheGeometry is rare in Three.js demos — distinctive and elegant.
+  const crystalPts = [
+    new THREE.Vector2(0.00,  0.82),  // apex
+    new THREE.Vector2(0.18,  0.68),
+    new THREE.Vector2(0.50,  0.18),
+    new THREE.Vector2(0.58, -0.08),  // widest band
+    new THREE.Vector2(0.46, -0.44),
+    new THREE.Vector2(0.22, -0.68),
+    new THREE.Vector2(0.00, -0.80),  // base point
+  ];
+  let gemGeo = new THREE.LatheGeometry(crystalPts, 6, 0, Math.PI * 2);
+  gemGeo = gemGeo.toNonIndexed();
   gemGeo.computeVertexNormals();
   {
-    const cbPalette = [
-      new THREE.Color(0xcc2e24),  // Cornell red
-      new THREE.Color(0xe8e2d8),  // Cornell cream
-      new THREE.Color(0x228a40),  // Cornell green
-    ];
     const aPos  = gemGeo.attributes.position;
     const aCols = new Float32Array(aPos.count * 3);
-    for (let i = 0, fi = 0; i < aPos.count; i += 3, fi++) {
-      const c = cbPalette[fi % cbPalette.length];
+    const yMin = -0.82, yRange = 1.64;
+    for (let i = 0; i < aPos.count; i += 3) {
+      const avgY = (aPos.getY(i) + aPos.getY(i+1) + aPos.getY(i+2)) / 3;
+      const t  = (avgY - yMin) / yRange;          // 0 at base → 1 at tip
+      const h  = 0.72 - t * 0.62;                 // violet → cyan → green → amber
+      const c  = new THREE.Color().setHSL(h, 0.92, 0.56);
       for (let j = 0; j < 3; j++) {
         aCols[(i+j)*3]   = c.r;
         aCols[(i+j)*3+1] = c.g;
@@ -267,14 +276,14 @@ function buildObjects() {
     new THREE.MeshStandardMaterial({
       vertexColors: true,
       flatShading: true,
-      roughness: 0.55,
-      metalness: 0.08,
+      roughness: 0.40,
+      metalness: 0.10,
     })
   );
   gem.position.set(1.75, -HALF + 1.55, 0.7);
   gem.castShadow = true; gem.receiveShadow = true;
   gem.userData = { section: 'about', label: 'About',
-    labelWorld: new THREE.Vector3(1.75, -HALF + 2.7, 0.7) };
+    labelWorld: new THREE.Vector3(1.75, -HALF + 2.8, 0.7) };
   scene.add(gem);
 
   // ─── 4. Dodecahedron on column → Contact ────────────────────────────
@@ -288,7 +297,8 @@ function buildObjects() {
     const dPos  = dodecGeo.attributes.position;
     const dCols = new Float32Array(dPos.count * 3);
     for (let i = 0; i < dPos.count; i += 3) {
-      const c = new THREE.Color().setHSL(Math.random(), 0.88, 0.52);
+      // Higher lightness (0.68) so colours remain vivid through the transparency
+      const c = new THREE.Color().setHSL(Math.random(), 0.92, 0.68);
       for (let j = 0; j < 3; j++) {
         dCols[(i+j)*3]   = c.r;
         dCols[(i+j)*3+1] = c.g;
@@ -298,11 +308,16 @@ function buildObjects() {
     dodecGeo.setAttribute('color', new THREE.BufferAttribute(dCols, 3));
   }
   const dodec = new THREE.Mesh(dodecGeo,
-    new THREE.MeshStandardMaterial({
+    new THREE.MeshPhysicalMaterial({
       vertexColors: true,
       flatShading: true,
-      roughness: 0.60,
-      metalness: 0.05,
+      roughness: 0.05,
+      metalness: 0.0,
+      opacity: 0.52,
+      transparent: true,
+      clearcoat: 0.9,
+      clearcoatRoughness: 0.04,   // coloured glass: each face vivid + glassy sheen
+      side: THREE.DoubleSide,     // inner faces visible through the transparency
     })
   );
   dodec.position.set(1.7, 0, -1.55);
