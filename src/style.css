@@ -90,6 +90,18 @@ body { font-family: var(--font-ui); color: var(--cream); -webkit-font-smoothing:
   margin-top: 5px;
   font-weight: 500;
 }
+.nameplate-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(240,236,228,0.5);
+  text-decoration: none;
+  pointer-events: all;
+  transition: color 0.2s;
+}
+.nameplate-link:hover { color: var(--green); }
 
 /* ── Scene hint ──────────────────────── */
 #scene-hint {
@@ -403,6 +415,40 @@ body { font-family: var(--font-ui); color: var(--cream); -webkit-font-smoothing:
   width: 5px; height: 5px;
   background: var(--green-dim);
   border-radius: 50%;
+}
+
+/* ── Programming language icon grid ─── */
+.lang-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.lang-icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-width: 58px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.lang-icon-item:hover {
+  background: rgba(34,197,94,0.07);
+  border-color: rgba(34,197,94,0.28);
+}
+.lang-icon-item img {
+  width: 26px; height: 26px;
+  object-fit: contain;
+}
+.lang-icon-item span {
+  font-size: 0.60rem;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.04em;
 }
 
 /* ── Tag cloud ───────────────────────── */
