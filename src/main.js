@@ -32,7 +32,7 @@ renderer.shadowMap.enabled  = true;
 renderer.shadowMap.type     = THREE.PCFShadowMap;   // cheaper than PCFSoft
 renderer.outputColorSpace   = THREE.SRGBColorSpace;
 renderer.toneMapping        = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.25;
+renderer.toneMappingExposure = 1.0;  // was 1.25 — walls were overblown
 
 // Environment map — gives metallic + glass surfaces real reflections.
 // PMREMGenerator runs once at startup (not per-frame) so no runtime cost.
@@ -113,11 +113,18 @@ function makeCheckerTex(colorA, colorB) {
 function buildWalls() {
   const T = 0.18;
 
-  const texCream = makeCheckerTex('#f0ece4', '#cec8bc');  // cream ↔ warm taupe
+  // Floor — dark warm wood so it reads as "ground"
+  const texFloor = makeCheckerTex('#7a6548', '#5a4535');
+  // Ceiling — dimmed off-white, not the blinding cream
+  const texCeil  = makeCheckerTex('#b8b4ac', '#989490');
+  // Back wall — muted warm taupe, middle value between floor and ceiling
+  const texBack  = makeCheckerTex('#c4c0b8', '#a4a09a');
   const texRed   = makeCheckerTex('#cc2e24', '#9e2218');  // bright red ↔ dark red
   const texGreen = makeCheckerTex('#228a40', '#176c31');  // leaf green ↔ deep green
 
-  const mCream = new THREE.MeshStandardMaterial({ map: texCream, roughness: 0.90, metalness: 0 });
+  const mFloor = new THREE.MeshStandardMaterial({ map: texFloor, roughness: 0.92, metalness: 0 });
+  const mCeil  = new THREE.MeshStandardMaterial({ map: texCeil,  roughness: 0.90, metalness: 0 });
+  const mBack  = new THREE.MeshStandardMaterial({ map: texBack,  roughness: 0.90, metalness: 0 });
   const mRed   = new THREE.MeshStandardMaterial({ map: texRed,   roughness: 0.88, metalness: 0 });
   const mGreen = new THREE.MeshStandardMaterial({ map: texGreen, roughness: 0.88, metalness: 0 });
 
@@ -129,11 +136,11 @@ function buildWalls() {
     return m;
   };
 
-  wall(BOX,    T,   BOX,   0,    -HALF, 0,     mCream);  // floor
-  wall(BOX,    T,   BOX,   0,     HALF, 0,     mCream);  // ceiling
-  wall(BOX,    BOX, T,     0,     0,   -HALF,  mCream);  // back
-  wall(T,      BOX, BOX,  -HALF,  0,    0,     mRed  );  // left (red)
-  wall(T,      BOX, BOX,   HALF,  0,    0,     mGreen);  // right (green)
+  wall(BOX,    T,   BOX,   0,    -HALF, 0,     mFloor); // floor  — dark warm wood
+  wall(BOX,    T,   BOX,   0,     HALF, 0,     mCeil);  // ceiling — dim off-white
+  wall(BOX,    BOX, T,     0,     0,   -HALF,  mBack);  // back wall — muted taupe
+  wall(T,      BOX, BOX,  -HALF,  0,    0,     mRed  ); // left (red)
+  wall(T,      BOX, BOX,   HALF,  0,    0,     mGreen); // right (green)
   // No front wall — open face toward camera
 }
 
@@ -232,15 +239,36 @@ function buildObjects() {
     labelWorld: new THREE.Vector3(-1.6, -HALF + 3.1, 0.6) };
   scene.add(torusKnot);
 
-  // ─── 3. Crystal Gem / Octahedron (floating) → About ─────────────────
-  const gemGeo = new THREE.OctahedronGeometry(0.88, 0);
+  // ─── 3. Cornell-palette icosahedron (floating) → About ─────────────
+  // Each face painted in red / cream / green — the Cornell Box is his identity
+  // (it appears on his business card, he wrote the raytracer that rendered it).
+  let gemGeo = new THREE.IcosahedronGeometry(0.80, 0); // 20 flat faces
+  gemGeo = gemGeo.toNonIndexed();                       // unique verts per face
+  gemGeo.computeVertexNormals();
+  {
+    const cbPalette = [
+      new THREE.Color(0xcc2e24),  // Cornell red
+      new THREE.Color(0xe8e2d8),  // Cornell cream
+      new THREE.Color(0x228a40),  // Cornell green
+    ];
+    const aPos  = gemGeo.attributes.position;
+    const aCols = new Float32Array(aPos.count * 3);
+    for (let i = 0, fi = 0; i < aPos.count; i += 3, fi++) {
+      const c = cbPalette[fi % cbPalette.length];
+      for (let j = 0; j < 3; j++) {
+        aCols[(i+j)*3]   = c.r;
+        aCols[(i+j)*3+1] = c.g;
+        aCols[(i+j)*3+2] = c.b;
+      }
+    }
+    gemGeo.setAttribute('color', new THREE.BufferAttribute(aCols, 3));
+  }
   const gem = new THREE.Mesh(gemGeo,
-    new THREE.MeshPhysicalMaterial({
-      color: 0xaabbff,
-      roughness: 0.0,
-      metalness: 0.15,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.0,        // polished gem facets — no iridescence (cheaper)
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      flatShading: true,
+      roughness: 0.55,
+      metalness: 0.08,
     })
   );
   gem.position.set(1.75, -HALF + 1.55, 0.7);
@@ -252,17 +280,29 @@ function buildObjects() {
   // ─── 4. Dodecahedron on column → Contact ────────────────────────────
   const pedestalTopR = buildPedestal(1.7, -1.55, 2.8);   // taller column
 
-  const dodecGeo = new THREE.DodecahedronGeometry(0.78, 0);
+  // Multicolor flat-poly dodecahedron — same vibrant vertex-color technique as the bunny
+  let dodecGeo = new THREE.DodecahedronGeometry(0.78, 0);
+  dodecGeo = dodecGeo.toNonIndexed();
+  dodecGeo.computeVertexNormals();
+  {
+    const dPos  = dodecGeo.attributes.position;
+    const dCols = new Float32Array(dPos.count * 3);
+    for (let i = 0; i < dPos.count; i += 3) {
+      const c = new THREE.Color().setHSL(Math.random(), 0.88, 0.52);
+      for (let j = 0; j < 3; j++) {
+        dCols[(i+j)*3]   = c.r;
+        dCols[(i+j)*3+1] = c.g;
+        dCols[(i+j)*3+2] = c.b;
+      }
+    }
+    dodecGeo.setAttribute('color', new THREE.BufferAttribute(dCols, 3));
+  }
   const dodec = new THREE.Mesh(dodecGeo,
-    new THREE.MeshPhysicalMaterial({
-      color: 0xcceeff,
-      roughness: 0.0,
-      metalness: 0.0,
-      opacity: 0.30,
-      transparent: true,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.04,   // fake glass: transparent + clearcoat speculars
-      side: THREE.DoubleSide,     // show inner faces when looking through
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      flatShading: true,
+      roughness: 0.60,
+      metalness: 0.05,
     })
   );
   dodec.position.set(1.7, 0, -1.55);
@@ -327,11 +367,11 @@ function buildBunny() {
 let ceilLight;
 
 function buildLighting() {
-  scene.add(new THREE.AmbientLight(0x3a5040, 0.7));
+  scene.add(new THREE.AmbientLight(0x3a5040, 0.45));  // was 0.7
 
   // Emissive ceiling panel
   const panelMat = new THREE.MeshStandardMaterial({
-    color: COL.warmLight, emissive: COL.warmLight, emissiveIntensity: 2.8,
+    color: COL.warmLight, emissive: COL.warmLight, emissiveIntensity: 1.8,  // was 2.8
   });
   const panel = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.9), panelMat);
   panel.rotation.x = Math.PI / 2;
@@ -340,14 +380,14 @@ function buildLighting() {
 
   // Pendant globe
   const pendMat = new THREE.MeshStandardMaterial({
-    color: COL.warmLight, emissive: COL.warmLight, emissiveIntensity: 4.5,
+    color: COL.warmLight, emissive: COL.warmLight, emissiveIntensity: 3.0,  // was 4.5
   });
   const pend = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 12), pendMat);
   pend.position.set(0, HALF - 0.5, 0);
   scene.add(pend);
 
   // Shadow-casting point light
-  ceilLight = new THREE.PointLight(COL.warmLight, 10, 22, 1.5);
+  ceilLight = new THREE.PointLight(COL.warmLight, 7, 22, 1.5);  // was 10
   ceilLight.position.set(0, HALF - 0.5, 0);
   ceilLight.castShadow = true;
   ceilLight.shadow.mapSize.set(512, 512);  // halved — still smooth, half the VRAM
