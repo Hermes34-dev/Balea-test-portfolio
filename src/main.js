@@ -211,11 +211,14 @@ function buildObjects() {
   const teapotGeo = new TeapotGeometry(0.85, 10);
   const teapot = new THREE.Mesh(teapotGeo,
     new THREE.MeshPhysicalMaterial({
-      color: 0xfaf5f0,
-      roughness: 0.07,
+      color: 0x1155bb,            // cobalt blue glaze
+      roughness: 0.04,
       metalness: 0.0,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.04,   // glazed white porcelain
+      clearcoatRoughness: 0.02,
+      sheen: 0.9,
+      sheenRoughness: 0.38,
+      sheenColor: new THREE.Color(0xd4a827),  // gold shimmer at grazing angles
     })
   );
   teapot.rotation.y = -0.5;
