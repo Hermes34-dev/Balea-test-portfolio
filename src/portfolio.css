@@ -450,7 +450,28 @@ img { display: block; max-width: 100%; }
   font-size: 1rem;
   font-weight: 600;
   color: var(--cream);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.tl-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 6px;
+  color: var(--green);
+}
+.tl-icon.tl-icon-edu {
+  background: rgba(99, 179, 237, 0.1);
+  border-color: rgba(99, 179, 237, 0.35);
+  color: #63b3ed;
+}
+.tl-icon svg { width: 14px; height: 14px; }
 
 .tl-company {
   font-size: 0.82rem;

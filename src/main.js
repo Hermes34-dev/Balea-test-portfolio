@@ -209,17 +209,43 @@ function buildObjects() {
   // ─── 1. Utah Teapot on column → Projects ────────────────────────────
   const pedestalTopL = buildPedestal(-1.8, -1.3, 3.2);   // taller column
 
-  const teapotGeo = new TeapotGeometry(0.85, 10);
+  // Rainbow iridescent teapot — full-spectrum vertex colours + clearcoat gloss
+  const teapotGeoBase = new TeapotGeometry(0.85, 10);
+  const teapotGeo = teapotGeoBase.toNonIndexed(); // one vertex per triangle face
+
+  {
+    const pos = teapotGeo.attributes.position;
+    const count = pos.count;
+    const colors = new Float32Array(count * 3);
+    // Bounding box for normalisation
+    teapotGeoBase.computeBoundingBox();
+    const bb = teapotGeoBase.boundingBox;
+    const yRange = bb.max.y - bb.min.y;
+    for (let i = 0; i < count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+      // Hue spirals around the surface: angle 0–1 + height 0–1, scaled so a
+      // full revolution equals a full rainbow (modulo 1).
+      const angle = (Math.atan2(x, z) / (2 * Math.PI) + 0.5); // 0..1
+      const t     = (y - bb.min.y) / yRange;                   // 0..1
+      const hue   = (angle * 0.55 + t * 0.45) % 1.0;
+      // HSL → RGB (full saturation, 60% lightness for vibrancy under lights)
+      const c = new THREE.Color().setHSL(hue, 1.0, 0.60);
+      colors[i * 3]     = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    }
+    teapotGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  }
+
   const teapot = new THREE.Mesh(teapotGeo,
     new THREE.MeshPhysicalMaterial({
-      color: 0x1155bb,            // cobalt blue glaze
-      roughness: 0.04,
+      vertexColors: true,
+      roughness: 0.06,
       metalness: 0.0,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.02,
-      sheen: 0.9,
-      sheenRoughness: 0.38,
-      sheenColor: new THREE.Color(0xd4a827),  // gold shimmer at grazing angles
+      clearcoatRoughness: 0.04,
     })
   );
   teapot.rotation.y = -0.5;
@@ -822,4 +848,22 @@ document.querySelectorAll('.proj-view-btn[data-project]').forEach(btn => {
 document.querySelectorAll('.proj-card[data-project]').forEach(card => {
   card.style.cursor = 'pointer';
   card.addEventListener('click', () => openProjectPage(card.dataset.project));
+});
+
+// Populate .proj-img-3d gradient/image headers from PROJECTS data
+document.querySelectorAll('.proj-card[data-project]').forEach(card => {
+  const id  = card.dataset.project;
+  const p   = PROJECTS[id];
+  const div = card.querySelector('.proj-img-3d');
+  if (!p || !div) return;
+  if (p.image) {
+    const img = document.createElement('img');
+    img.src     = p.image;
+    img.alt     = p.title;
+    img.loading = 'lazy';
+    div.appendChild(img);
+  } else {
+    div.style.background = p.gradient;
+    div.classList.add('proj-img-3d-gradient');
+  }
 });
