@@ -708,6 +708,270 @@ body { font-family: var(--font-ui); color: var(--cream); -webkit-font-smoothing:
   .proj-company        { font-size: 0.7rem; }
 }
 
+/* ── Project card view button (inside panel proj-cards) ─── */
+.proj-view-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--green);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.proj-view-btn:hover {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+/* ── Full-screen project page ────────────────────────────── */
+/*  Slides up over the 3D canvas from below; z-index sits    */
+/*  above the side panel (50) so the back-button reveals it. */
+#proj-page {
+  position: fixed;
+  inset: 0;
+  background: var(--dark);
+  z-index: 80;
+  transform: translateY(105%);
+  transition: transform 0.48s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+#proj-page::-webkit-scrollbar { width: 4px; }
+#proj-page::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+#proj-page.open {
+  transform: translateY(0);
+}
+
+/* Sticky top-bar */
+.pp3-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  height: 50px;
+  background: rgba(7, 18, 11, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.pp3-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--green);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+.pp3-back:hover { opacity: 0.75; }
+
+.pp3-nav-title {
+  font-family: var(--font-head);
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: right;
+}
+
+/* Hero image / gradient */
+.pp3-hero-img {
+  width: 100%;
+  height: 280px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.pp3-hero-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Green wireframe grid overlay on gradient heroes */
+.pp3-hero-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34, 197, 94, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 197, 94, 0.07) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* Content body */
+.pp3-body {
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 32px 28px 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── pp3 typography (mirrors portfolio pp-* classes) ─────── */
+.pp3-header-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pp3-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pp3-title {
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--cream);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.pp3-category {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.pp3-role {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0;
+}
+.pp3-role span { color: var(--cream); font-weight: 600; }
+
+.pp3-period {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.pp3-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pp3-section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.pp3-desc {
+  font-size: 0.92rem;
+  color: var(--muted);
+  line-height: 1.75;
+  margin: 0;
+}
+
+.pp3-highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pp3-highlights li {
+  font-size: 0.88rem;
+  color: var(--muted);
+  padding-left: 16px;
+  position: relative;
+  line-height: 1.55;
+}
+.pp3-highlights li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.pp3-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pp3-chips span {
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 11px;
+  color: rgba(240, 236, 228, 0.65);
+}
+
+.pp3-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pp3-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 18px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--green);
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+.pp3-link:hover {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+/* ── Mobile overrides for project page ──────────────────── */
+@media (max-width: 680px) {
+  .pp3-hero-img   { height: 200px; }
+  .pp3-body       { padding: 24px 20px 56px; }
+  .pp3-title      { font-size: 1.3rem; }
+  .pp3-topbar     { padding: 0 16px; }
+}
+
 /* Landscape mobile / small tablets — keep full-screen look */
 @media (max-height: 500px) and (orientation: landscape) {
   #overlay-panel {

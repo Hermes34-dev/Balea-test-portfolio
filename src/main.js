@@ -6,6 +6,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { PROJECTS } from './projects-data.js';
 
 // ═══════════════════════════════════════════
 //  CONSTANTS
@@ -522,7 +523,12 @@ function closePanel() {
 
 document.getElementById('close-btn').addEventListener('click', closePanel);
 backdrop.addEventListener('click', closePanel);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (projPageEl && projPageEl.classList.contains('open')) closeProjectPage();
+    else closePanel();
+  }
+});
 
 // ═══════════════════════════════════════════
 //  RAYCASTING — hover + click
@@ -705,4 +711,115 @@ window.addEventListener('load', () => {
   setTimeout(() => {
     document.getElementById('loading-screen').classList.add('hidden');
   }, 500);
+});
+
+// ═══════════════════════════════════════════
+//  PROJECT PAGE  (full-screen overlay)
+//  Opens from "View →" buttons inside the Projects panel.
+//  Slides up over the 3D view; Back button slides it down,
+//  revealing the scene + the still-open Projects panel.
+// ═══════════════════════════════════════════
+const projPageEl       = document.getElementById('proj-page');
+const projPageHero     = document.getElementById('pp3-hero');
+const projPageBody     = document.getElementById('pp3-body');
+const projPageNavTitle = document.getElementById('pp3-nav-title');
+
+function _esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function buildProjPageHTML(p) {
+  const company = p.company
+    ? `<p class="pp3-role">${_esc(p.role)} &nbsp;&middot;&nbsp; <span>${_esc(p.company)}</span></p>`
+    : '';
+  const highlights = p.highlights.map(h => `<li>${_esc(h)}</li>`).join('');
+  const chips = p.chips.map(c => `<span>${_esc(c)}</span>`).join('');
+  const links = p.links && p.links.length
+    ? `<div class="pp3-section"><div class="pp3-links">${
+        p.links.map(l =>
+          `<a href="${_esc(l.url)}" target="_blank" rel="noopener" class="pp3-link">${_esc(l.label)} ↗</a>`
+        ).join('')
+      }</div></div>`
+    : '';
+
+  return `
+    <div class="pp3-header-section">
+      <div class="pp3-title-row">
+        <h2 class="pp3-title">${_esc(p.title)}</h2>
+        <span class="proj-badge ${_esc(p.status)}">${_esc(p.statusLabel)}</span>
+      </div>
+      <p class="pp3-category">${_esc(p.category)}</p>
+      ${company}
+      <p class="pp3-period">${_esc(p.period)}</p>
+    </div>
+    <div class="pp3-section">
+      <p class="pp3-desc">${_esc(p.description)}</p>
+    </div>
+    <div class="pp3-section">
+      <h3 class="pp3-section-label">Highlights</h3>
+      <ul class="pp3-highlights">${highlights}</ul>
+    </div>
+    <div class="pp3-section">
+      <h3 class="pp3-section-label">Tech Stack</h3>
+      <div class="pp3-chips">${chips}</div>
+    </div>
+    ${links}
+  `;
+}
+
+function openProjectPage(id) {
+  const data = PROJECTS[id];
+  if (!data || !projPageEl) return;
+
+  // Hero image or gradient
+  if (projPageHero) {
+    projPageHero.className = 'pp3-hero-img';
+    projPageHero.removeAttribute('style');
+    projPageHero.innerHTML = '';
+    if (data.image) {
+      const img = new Image();
+      img.src = data.image;
+      img.alt = data.title;
+      img.loading = 'lazy';
+      projPageHero.appendChild(img);
+    } else {
+      projPageHero.style.background = data.gradient;
+      projPageHero.classList.add('pp3-hero-gradient');
+    }
+  }
+
+  // Nav title + body
+  if (projPageNavTitle) projPageNavTitle.textContent = data.title;
+  if (projPageBody)     projPageBody.innerHTML = buildProjPageHTML(data);
+
+  // Slide up
+  projPageEl.classList.add('open');
+  projPageEl.setAttribute('aria-hidden', 'false');
+  projPageEl.scrollTop = 0;
+  // Note: intentionally do NOT close the panel — it waits behind.
+}
+
+function closeProjectPage() {
+  if (!projPageEl) return;
+  projPageEl.classList.remove('open');
+  projPageEl.setAttribute('aria-hidden', 'true');
+}
+
+// Back button
+document.getElementById('pp3-back')?.addEventListener('click', closeProjectPage);
+
+// "View →" buttons inside the panel proj-cards
+document.querySelectorAll('.proj-view-btn[data-project]').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    openProjectPage(btn.dataset.project);
+  });
+});
+
+// Clicking anywhere on a proj-card also opens the page
+document.querySelectorAll('.proj-card[data-project]').forEach(card => {
+  card.style.cursor = 'pointer';
+  card.addEventListener('click', () => openProjectPage(card.dataset.project));
 });

@@ -221,37 +221,40 @@
       <!-- Personal projects -->
       <h3 class="section-sub">Personal</h3>
 
-      <div class="proj-card">
+      <div class="proj-card" data-project="raytracer">
         <div class="proj-top">
           <h3>Multithreaded CPU Raytracer</h3>
           <span class="proj-badge done">Done</span>
         </div>
         <p>CPU-only offline raytracer in C++. Diffuse, metallic &amp; dielectric materials, GLTF loading, BVH acceleration. Same engine powers a Volumetric Cloud Renderer.</p>
         <div class="proj-chips"><span>C++</span><span>BVH</span><span>GLTF</span><span>Multithreading</span></div>
+        <button class="proj-view-btn" data-project="raytracer">View project →</button>
       </div>
 
-      <div class="proj-card">
+      <div class="proj-card" data-project="nonogram">
         <div class="proj-top">
           <h3>Daily Nonogram Web App</h3>
           <span class="proj-badge done">Done</span>
         </div>
         <p>Self-hosted "Wordle"-like daily Nonogram in Rust (Actix) + React. PostgreSQL for user &amp; puzzle data; MinIO as S3-compatible object store.</p>
         <div class="proj-chips"><span>Rust</span><span>Actix</span><span>React</span><span>PostgreSQL</span><span>MinIO</span></div>
+        <button class="proj-view-btn" data-project="nonogram">View project →</button>
       </div>
 
-      <div class="proj-card">
+      <div class="proj-card" data-project="enrouter">
         <div class="proj-top">
           <h3>Bus Worker Enrouter</h3>
           <span class="proj-badge done">Done</span>
         </div>
         <p>Optimisation tool for picking up workers using a VRPTW model. Currently in production use by Bilbobus.</p>
         <div class="proj-chips"><span>VRPTW</span><span>Optimisation</span></div>
+        <button class="proj-view-btn" data-project="enrouter">View project →</button>
       </div>
 
       <!-- Team / professional projects -->
       <h3 class="section-sub">Team &amp; Professional</h3>
 
-      <div class="proj-card">
+      <div class="proj-card" data-project="fair">
         <div class="proj-top">
           <h3>fAIr: Fight Fire with fAIr</h3>
           <span class="proj-badge wip">Active</span>
@@ -259,9 +262,10 @@
         <p class="proj-company">Research Engineer · Gradiant &nbsp;·&nbsp; 01/2025 – 03/2026</p>
         <p>Multimodal web platform detecting AI-generated/manipulated content to counter digital fraud, with INCIBE. Backend + REST API, C++ crypto &amp; NN modules, Docker/RabbitMQ jobs.</p>
         <div class="proj-chips"><span>C++</span><span>Python</span><span>Docker</span><span>RabbitMQ</span><span>OpenSSL</span></div>
+        <button class="proj-view-btn" data-project="fair">View project →</button>
       </div>
 
-      <div class="proj-card">
+      <div class="proj-card" data-project="arruyo">
         <div class="proj-top">
           <h3>Arruyo</h3>
           <span class="proj-badge done">Done</span>
@@ -269,9 +273,10 @@
         <p class="proj-company">Graphics / VFX Programmer · Tequila Works &nbsp;·&nbsp; 09/2021 – 04/2022</p>
         <p>Senior 3D game project in a custom C++ engine, 11-person team. VFX, core mechanics, level lighting. Published on Steam.</p>
         <div class="proj-chips"><span>C++</span><span>VFX</span><span>OpenGL</span></div>
+        <button class="proj-view-btn" data-project="arruyo">View project →</button>
       </div>
 
-      <div class="proj-card">
+      <div class="proj-card" data-project="arclight2">
         <div class="proj-top">
           <h3>Arclight 2</h3>
           <span class="proj-badge done">Done</span>
@@ -279,9 +284,10 @@
         <p class="proj-company">Engine / Graphics Programmer · DigiPen &nbsp;·&nbsp; 09/2020 – 04/2021</p>
         <p>3rd-year 3D game project in a custom C++ engine, 7-person team. Devised the full OpenGL 3D graphics pipeline; visual effects &amp; UI design.</p>
         <div class="proj-chips"><span>C++</span><span>OpenGL</span><span>ECS</span></div>
+        <button class="proj-view-btn" data-project="arclight2">View project →</button>
       </div>
 
-      <div class="proj-card">
+      <div class="proj-card" data-project="entails">
         <div class="proj-top">
           <h3>Entails</h3>
           <span class="proj-badge done">Done</span>
@@ -289,6 +295,7 @@
         <p class="proj-company">Engine / Graphics Programmer · DigiPen &nbsp;·&nbsp; 09/2019 – 04/2020</p>
         <p>2nd-year 2D game in a custom C++ engine, 11-person team. 2D graphics pipeline from scratch, ImGui level-creation editor.</p>
         <div class="proj-chips"><span>C++</span><span>OpenGL</span><span>ImGui</span></div>
+        <button class="proj-view-btn" data-project="entails">View project →</button>
       </div>
     </div>
 
@@ -335,6 +342,23 @@
 
   <!-- Backdrop -->
   <div id="backdrop"></div>
+
+  <!-- ─── FULL-SCREEN PROJECT PAGE ──────────────────────────── -->
+  <!-- Slides up over the Cornell Box when a project's "View →" is clicked.  -->
+  <!-- Dismissing slides back down to reveal the 3D scene + open panel.       -->
+  <div id="proj-page" aria-hidden="true">
+    <nav class="pp3-topbar">
+      <button class="pp3-back" id="pp3-back" aria-label="Back to projects">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" aria-hidden="true"><path d="M12 4l-6 6 6 6"/></svg>
+        Back
+      </button>
+      <span class="pp3-nav-title" id="pp3-nav-title"></span>
+    </nav>
+    <!-- Full-bleed hero image / gradient — filled by JS -->
+    <div id="pp3-hero" class="pp3-hero-img"></div>
+    <!-- Padded content body — filled by JS -->
+    <div class="pp3-body" id="pp3-body"></div>
+  </div>
 
   <script type="module" src="/src/main.js"></script>
 </body>
