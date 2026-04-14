@@ -5,6 +5,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { PROJECTS } from './projects-data.js';
 
@@ -206,40 +207,70 @@ function buildPedestal(x, z, totalH = 2.4) {
 // ═══════════════════════════════════════════
 function buildObjects() {
 
-  // ─── 1. Utah Teapot on column → Projects ────────────────────────────
+  // ─── 1. Rainbow Rabbit on column → Projects ─────────────────────────
   const pedestalTopL = buildPedestal(-1.8, -1.3, 3.2);   // taller column
 
-  // Rainbow iridescent teapot — full-spectrum vertex colours + clearcoat gloss
-  const teapotGeoBase = new TeapotGeometry(0.85, 10);
-  const teapotGeo = teapotGeoBase.toNonIndexed(); // one vertex per triangle face
+  // Procedural rabbit: body + head + ears + snout + tail merged into one
+  // BufferGeometry, then per-vertex HSL rainbow (height + azimuth).
+  const _rabbitRaw = (() => {
+    const bodyGeo = new THREE.SphereGeometry(0.32, 14, 10);
+    bodyGeo.applyMatrix4(new THREE.Matrix4().makeScale(1.0, 1.12, 0.92));
+
+    const headGeo = new THREE.SphereGeometry(0.205, 12, 9);
+    headGeo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0.48, 0.07));
+
+    const lEarGeo = new THREE.CapsuleGeometry(0.052, 0.36, 4, 8);
+    const lM = new THREE.Matrix4().makeRotationZ(-0.16);
+    lM.setPosition(-0.10, 0.87, 0.05);
+    lEarGeo.applyMatrix4(lM);
+
+    const rEarGeo = new THREE.CapsuleGeometry(0.052, 0.36, 4, 8);
+    const rM = new THREE.Matrix4().makeRotationZ(0.16);
+    rM.setPosition(0.10, 0.87, 0.05);
+    rEarGeo.applyMatrix4(rM);
+
+    const tailGeo = new THREE.SphereGeometry(0.076, 7, 6);
+    tailGeo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -0.06, -0.30));
+
+    const snoutGeo = new THREE.SphereGeometry(0.073, 7, 6);
+    snoutGeo.applyMatrix4(new THREE.Matrix4().makeScale(1.1, 0.68, 0.82));
+    snoutGeo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0.44, 0.27));
+
+    return mergeGeometries(
+      [bodyGeo, headGeo, lEarGeo, rEarGeo, tailGeo, snoutGeo]
+    );
+  })();
+
+  const rabbitGeo = _rabbitRaw.toNonIndexed();
+  rabbitGeo.computeVertexNormals();
 
   {
-    const pos = teapotGeo.attributes.position;
+    const pos = rabbitGeo.attributes.position;
     const count = pos.count;
     const colors = new Float32Array(count * 3);
-    // Bounding box for normalisation
-    teapotGeoBase.computeBoundingBox();
-    const bb = teapotGeoBase.boundingBox;
-    const yRange = bb.max.y - bb.min.y;
+    let yMin = Infinity, yMax = -Infinity;
+    for (let i = 0; i < count; i++) {
+      const y = pos.getY(i);
+      if (y < yMin) yMin = y;
+      if (y > yMax) yMax = y;
+    }
+    const yRange = yMax - yMin || 1;
     for (let i = 0; i < count; i++) {
       const x = pos.getX(i);
       const y = pos.getY(i);
       const z = pos.getZ(i);
-      // Hue spirals around the surface: angle 0–1 + height 0–1, scaled so a
-      // full revolution equals a full rainbow (modulo 1).
-      const angle = (Math.atan2(x, z) / (2 * Math.PI) + 0.5); // 0..1
-      const t     = (y - bb.min.y) / yRange;                   // 0..1
-      const hue   = (angle * 0.55 + t * 0.45) % 1.0;
-      // HSL → RGB (full saturation, 60% lightness for vibrancy under lights)
+      const t     = (y - yMin) / yRange;
+      const angle = (Math.atan2(x, z) / (2 * Math.PI) + 0.5);
+      const hue   = (t * 0.55 + angle * 0.45) % 1.0;
       const c = new THREE.Color().setHSL(hue, 1.0, 0.60);
       colors[i * 3]     = c.r;
       colors[i * 3 + 1] = c.g;
       colors[i * 3 + 2] = c.b;
     }
-    teapotGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    rabbitGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   }
 
-  const teapot = new THREE.Mesh(teapotGeo,
+  const teapot = new THREE.Mesh(rabbitGeo,
     new THREE.MeshPhysicalMaterial({
       vertexColors: true,
       roughness: 0.06,
@@ -703,6 +734,13 @@ function animate() {
   if (ceilLight) {
     ceilLight.intensity = 10 + Math.sin(now * 0.0024) * 0.35;
   }
+
+  // ── Slowly breathing background (hue drifts green → teal → blue) ──
+  scene.background.setHSL(
+    0.35 + Math.sin(now * 0.00007) * 0.08,    // hue: 0.27 … 0.43
+    0.42 + Math.sin(now * 0.00011) * 0.16,    // saturation breathes gently
+    0.042 + Math.sin(now * 0.00009) * 0.013   // brightness: stays very dark
+  );
 
   // ── Update hotspot label positions ──
   updateHotspots();
