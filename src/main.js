@@ -42,8 +42,9 @@ const envTexture = pmremGenerator.fromScene(new RoomEnvironment(renderer), 0.04)
 pmremGenerator.dispose();
 
 const scene = new THREE.Scene();
-// Animated aurora background — dark gradient base + 3 slowly drifting
-// colour blobs redrawn each frame via CanvasTexture (canvas 256² is cheap).
+// Animated gradient background: diagonal deep-indigo → blue-violet → vivid magenta,
+// with two accent glows (royal blue + hot pink) that slowly orbit.
+// Inspired by bold tech-brand gradients — canvas 256² redrawn each frame (cheap).
 const _bgCv  = document.createElement('canvas');
 _bgCv.width  = 256; _bgCv.height = 256;
 const _bgCtx = _bgCv.getContext('2d');
@@ -51,36 +52,40 @@ const _bgTex = new THREE.CanvasTexture(_bgCv);
 _bgTex.colorSpace = THREE.SRGBColorSpace;
 scene.background = _bgTex;
 
-const _blobs = [
-  { ox: 0.22, oy: 0.28, sp: 1.00, h: 185, r: 0.44 }, // teal
-  { ox: 0.68, oy: 0.52, sp: 0.72, h: 245, r: 0.40 }, // blue
-  { ox: 0.44, oy: 0.78, sp: 1.28, h: 290, r: 0.37 }, // violet
-];
-
 function _updateBg(now) {
-  const t = now * 0.00009; // ~90 s full cycle
+  const t = now * 0.00007;
   const W = 256, H = 256;
 
-  // Base tri-colour gradient (hues drift very slowly)
-  const base = _bgCtx.createLinearGradient(0, 0, 0, H);
-  base.addColorStop(0,    `hsl(${(220 + Math.sin(t*0.6)*14).toFixed(1)},42%,5%)`);
-  base.addColorStop(0.48, `hsl(${(143 + Math.sin(t*0.4)*18).toFixed(1)},35%,3.5%)`);
-  base.addColorStop(1,    `hsl(${(278 + Math.sin(t*0.5)*13).toFixed(1)},40%,3%)`);
+  // Diagonal base gradient — indigo top-left → magenta bottom-right.
+  // Gradient endpoints drift slightly so it feels alive.
+  const x1 = W * (0.0 + Math.sin(t*0.28)*0.08);
+  const y1 = H * (0.0 + Math.cos(t*0.20)*0.08);
+  const x2 = W * (1.0 - Math.sin(t*0.28)*0.08);
+  const y2 = H * (1.0 - Math.cos(t*0.20)*0.08);
+  const base = _bgCtx.createLinearGradient(x1, y1, x2, y2);
+  base.addColorStop(0,    `hsl(${(232+Math.sin(t*0.5)*8).toFixed(1)},72%,13%)`);  // deep indigo
+  base.addColorStop(0.45, `hsl(${(262+Math.sin(t*0.4)*10).toFixed(1)},68%,16%)`); // blue-violet
+  base.addColorStop(1,    `hsl(${(312+Math.sin(t*0.6)*10).toFixed(1)},80%,20%)`); // vivid magenta
   _bgCtx.fillStyle = base;
   _bgCtx.fillRect(0, 0, W, H);
 
-  // Aurora blobs
-  for (const b of _blobs) {
-    const cx  = W * (b.ox + Math.sin(t*b.sp        + b.ox*5.5)*0.22);
-    const cy  = H * (b.oy + Math.cos(t*b.sp*0.78   + b.oy*4.2)*0.17);
-    const rad = W * (b.r  + Math.sin(t*0.48+b.oy*3)*0.07);
-    const hue = (b.h + Math.sin(t*1.1+b.ox*3)*22).toFixed(1);
-    const grd = _bgCtx.createRadialGradient(cx, cy, 0, cx, cy, rad);
-    grd.addColorStop(0, `hsla(${hue},55%,9%,0.58)`);
-    grd.addColorStop(1, 'hsla(0,0%,0%,0)');
-    _bgCtx.fillStyle = grd;
-    _bgCtx.fillRect(0, 0, W, H);
-  }
+  // Royal-blue accent glow (drifts top-left area)
+  const bx = W * (0.18 + Math.sin(t*0.9)*0.12);
+  const by = H * (0.22 + Math.cos(t*0.7)*0.14);
+  const bg = _bgCtx.createRadialGradient(bx, by, 0, bx, by, W*0.52);
+  bg.addColorStop(0, 'hsla(225,90%,45%,0.50)');
+  bg.addColorStop(1, 'hsla(225,90%,45%,0)');
+  _bgCtx.fillStyle = bg;
+  _bgCtx.fillRect(0, 0, W, H);
+
+  // Hot-pink accent glow (drifts bottom-right area)
+  const px = W * (0.78 + Math.sin(t*0.65)*0.12);
+  const py = H * (0.75 + Math.cos(t*0.85)*0.10);
+  const pg = _bgCtx.createRadialGradient(px, py, 0, px, py, W*0.44);
+  pg.addColorStop(0, 'hsla(320,100%,50%,0.45)');
+  pg.addColorStop(1, 'hsla(320,100%,50%,0)');
+  _bgCtx.fillStyle = pg;
+  _bgCtx.fillRect(0, 0, W, H);
 
   _bgTex.needsUpdate = true;
 }
