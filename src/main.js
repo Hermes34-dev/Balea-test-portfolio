@@ -42,22 +42,49 @@ const envTexture = pmremGenerator.fromScene(new RoomEnvironment(renderer), 0.04)
 pmremGenerator.dispose();
 
 const scene = new THREE.Scene();
-// Three-colour gradient background: deep navy top → dark forest mid → deep violet base.
-// Built once as a CanvasTexture — zero per-frame cost.
-scene.background = (() => {
-  const c = document.createElement('canvas');
-  c.width = 2; c.height = 512;
-  const ctx = c.getContext('2d');
-  const g = ctx.createLinearGradient(0, 0, 0, 512);
-  g.addColorStop(0,    '#0b1a2e'); // deep navy — ceiling/sky
-  g.addColorStop(0.48, '#071510'); // dark forest — horizon
-  g.addColorStop(1,    '#180d24'); // deep violet — floor
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 2, 512);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-})();
+// Animated aurora background — dark gradient base + 3 slowly drifting
+// colour blobs redrawn each frame via CanvasTexture (canvas 256² is cheap).
+const _bgCv  = document.createElement('canvas');
+_bgCv.width  = 256; _bgCv.height = 256;
+const _bgCtx = _bgCv.getContext('2d');
+const _bgTex = new THREE.CanvasTexture(_bgCv);
+_bgTex.colorSpace = THREE.SRGBColorSpace;
+scene.background = _bgTex;
+
+const _blobs = [
+  { ox: 0.22, oy: 0.28, sp: 1.00, h: 185, r: 0.44 }, // teal
+  { ox: 0.68, oy: 0.52, sp: 0.72, h: 245, r: 0.40 }, // blue
+  { ox: 0.44, oy: 0.78, sp: 1.28, h: 290, r: 0.37 }, // violet
+];
+
+function _updateBg(now) {
+  const t = now * 0.00009; // ~90 s full cycle
+  const W = 256, H = 256;
+
+  // Base tri-colour gradient (hues drift very slowly)
+  const base = _bgCtx.createLinearGradient(0, 0, 0, H);
+  base.addColorStop(0,    `hsl(${(220 + Math.sin(t*0.6)*14).toFixed(1)},42%,5%)`);
+  base.addColorStop(0.48, `hsl(${(143 + Math.sin(t*0.4)*18).toFixed(1)},35%,3.5%)`);
+  base.addColorStop(1,    `hsl(${(278 + Math.sin(t*0.5)*13).toFixed(1)},40%,3%)`);
+  _bgCtx.fillStyle = base;
+  _bgCtx.fillRect(0, 0, W, H);
+
+  // Aurora blobs
+  for (const b of _blobs) {
+    const cx  = W * (b.ox + Math.sin(t*b.sp        + b.ox*5.5)*0.22);
+    const cy  = H * (b.oy + Math.cos(t*b.sp*0.78   + b.oy*4.2)*0.17);
+    const rad = W * (b.r  + Math.sin(t*0.48+b.oy*3)*0.07);
+    const hue = (b.h + Math.sin(t*1.1+b.ox*3)*22).toFixed(1);
+    const grd = _bgCtx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    grd.addColorStop(0, `hsla(${hue},55%,9%,0.58)`);
+    grd.addColorStop(1, 'hsla(0,0%,0%,0)');
+    _bgCtx.fillStyle = grd;
+    _bgCtx.fillRect(0, 0, W, H);
+  }
+
+  _bgTex.needsUpdate = true;
+}
+
 scene.environment   = envTexture;
 scene.environmentIntensity = 0.28; // subtle — Cornell Box lights dominate
 
@@ -709,6 +736,9 @@ function animate() {
   if (ceilLight) {
     ceilLight.intensity = 10 + Math.sin(now * 0.0024) * 0.35;
   }
+
+  // ── Aurora background ──
+  _updateBg(now);
 
   // ── Update hotspot label positions ──
   updateHotspots();

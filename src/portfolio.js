@@ -192,4 +192,94 @@ import { PROJECTS } from './projects-data.js';
     }
   });
 
+  // ── Hero canvas: drifting ambient glow + mouse-reactive grid dots ───
+  (function () {
+    var heroEl = document.getElementById('hero');
+    var canvas = document.getElementById('hero-canvas');
+    if (!heroEl || !canvas) return;
+
+    var ctx     = canvas.getContext('2d');
+    var mX      = -9999, mY = -9999;
+    var CELL    = 55;
+    var MOUSE_R = 155;
+    var AMB_R   = 220;  // ambient spotlight radius
+    var DOT_MIN = 1.3;
+    var DOT_MAX = 5.0;
+    var startT  = performance.now();
+
+    function resize() {
+      canvas.width  = heroEl.offsetWidth;
+      canvas.height = heroEl.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize, { passive: true });
+
+    heroEl.addEventListener('mousemove', function (e) {
+      var r = heroEl.getBoundingClientRect();
+      mX = e.clientX - r.left; mY = e.clientY - r.top;
+    }, { passive: true });
+    heroEl.addEventListener('mouseleave', function () { mX = -9999; mY = -9999; }, { passive: true });
+    heroEl.addEventListener('touchmove', function (e) {
+      var r = heroEl.getBoundingClientRect();
+      mX = e.touches[0].clientX - r.left; mY = e.touches[0].clientY - r.top;
+    }, { passive: true });
+    heroEl.addEventListener('touchend', function () { mX = -9999; mY = -9999; }, { passive: true });
+
+    function draw() {
+      var w = canvas.width, h = canvas.height;
+      var t = (performance.now() - startT) * 0.001; // seconds
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Ambient spotlight — slow Lissajous orbit, always drifting
+      var aX = w * (0.5 + Math.sin(t * 0.21) * 0.30 + Math.sin(t * 0.09) * 0.10);
+      var aY = h * (0.5 + Math.cos(t * 0.16) * 0.26 + Math.cos(t * 0.13) * 0.09);
+
+      // Ambient glow halo
+      var ag = ctx.createRadialGradient(aX, aY, 0, aX, aY, AMB_R * 1.6);
+      ag.addColorStop(0,   'rgba(34,197,94,0.06)');
+      ag.addColorStop(0.4, 'rgba(34,197,94,0.025)');
+      ag.addColorStop(1,   'rgba(34,197,94,0)');
+      ctx.fillStyle = ag;
+      ctx.fillRect(0, 0, w, h);
+
+      // Mouse glow halo
+      if (mX > -100) {
+        var mg = ctx.createRadialGradient(mX, mY, 0, mX, mY, MOUSE_R * 1.5);
+        mg.addColorStop(0,   'rgba(34,197,94,0.10)');
+        mg.addColorStop(0.5, 'rgba(34,197,94,0.04)');
+        mg.addColorStop(1,   'rgba(34,197,94,0)');
+        ctx.fillStyle = mg;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      // Grid intersection dots
+      var cols = Math.ceil(w / CELL) + 1;
+      var rows = Math.ceil(h / CELL) + 1;
+      for (var row = 0; row <= rows; row++) {
+        for (var col = 0; col <= cols; col++) {
+          var px = col * CELL, py = row * CELL;
+
+          var dM  = Math.hypot(px - mX, py - mY);
+          var dA  = Math.hypot(px - aX, py - aY);
+          var tM  = (mX > -100) ? Math.max(0, 1 - dM / MOUSE_R) : 0;
+          var tAv = Math.max(0, 1 - dA / AMB_R);
+          var tC  = Math.max(tM, tAv);
+          var t2  = tC * tC;
+
+          var radius = DOT_MIN + (DOT_MAX - DOT_MIN) * t2;
+          var alpha  = 0.13 + 0.76 * t2;
+
+          ctx.beginPath();
+          ctx.arc(px, py, radius, 0, 6.2832);
+          ctx.fillStyle = 'rgba(34,197,94,' + alpha.toFixed(3) + ')';
+          ctx.fill();
+        }
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }());
+
 }());
