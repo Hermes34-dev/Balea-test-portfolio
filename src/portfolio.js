@@ -192,4 +192,149 @@ import { PROJECTS } from './projects-data.js';
     }
   });
 
+  // ── Hero: aurora ribbons + starfield ────────────────────────────────
+  (function () {
+    var heroEl = document.getElementById('hero');
+    var canvas = document.getElementById('hero-canvas');
+    if (!heroEl || !canvas) return;
+
+    var ctx = canvas.getContext('2d');
+    var W = 1, H = 1;
+    var mX = -9999, mY = -9999;
+    var t0 = performance.now();
+
+    // Stars
+    var NSTARS = 130;
+    var stars = [];
+    function initStars() {
+      stars = [];
+      for (var i = 0; i < NSTARS; i++) {
+        stars.push({
+          x: Math.random(),
+          y: Math.random(),
+          r: Math.random() * 1.0 + 0.25,
+          a: Math.random() * 0.55 + 0.15,
+          ts: Math.random() * Math.PI * 2,
+          tv: Math.random() * 1.8 + 0.4
+        });
+      }
+    }
+
+    function resize() {
+      W = canvas.width  = heroEl.offsetWidth;
+      H = canvas.height = heroEl.offsetHeight;
+      initStars();
+    }
+    resize();
+    window.addEventListener('resize', resize, { passive: true });
+
+    heroEl.addEventListener('mousemove', function (e) {
+      var r = heroEl.getBoundingClientRect();
+      mX = e.clientX - r.left; mY = e.clientY - r.top;
+    }, { passive: true });
+    heroEl.addEventListener('mouseleave', function () { mX = -9999; }, { passive: true });
+    heroEl.addEventListener('touchmove', function (e) {
+      var r = heroEl.getBoundingClientRect();
+      mX = e.touches[0].clientX - r.left; mY = e.touches[0].clientY - r.top;
+    }, { passive: true });
+    heroEl.addEventListener('touchend', function () { mX = -9999; }, { passive: true });
+
+    // Aurora band definitions — each a slow sinusoidal ribbon
+    var BANDS = [
+      { cy: 0.28, A: 0.07, f: 1.7, spd: 0.14, hue: 145, ht: 0.09 },
+      { cy: 0.42, A: 0.10, f: 2.3, spd: 0.21, hue: 155, ht: 0.11 },
+      { cy: 0.57, A: 0.08, f: 1.4, spd: 0.11, hue: 132, ht: 0.08 },
+      { cy: 0.34, A: 0.12, f: 2.9, spd: 0.27, hue: 148, ht: 0.07 },
+      { cy: 0.50, A: 0.06, f: 1.9, spd: 0.17, hue: 162, ht: 0.06 },
+    ];
+
+    function bandY(b, x, t) {
+      var wave = Math.sin(x * b.f / W * Math.PI * 2 + t * b.spd)
+               + 0.38 * Math.sin(x * b.f * 1.75 / W * Math.PI * 2 - t * b.spd * 0.65);
+      var y = b.cy * H + wave * b.A * H;
+      // Mouse warps the ribbon toward cursor
+      if (mX > -100) {
+        var dx = Math.abs(x - mX);
+        if (dx < 280) {
+          var pull = Math.pow(1 - dx / 280, 2) * 0.30;
+          y += (mY - b.cy * H) * pull;
+        }
+      }
+      return y;
+    }
+
+    function drawBand(b, t) {
+      var STEPS = Math.ceil(W / 3);
+      var ht = b.ht * H;
+      var cy = b.cy * H;
+
+      ctx.beginPath();
+      for (var i = 0; i <= STEPS; i++) {
+        var x = (i / STEPS) * W;
+        var y = bandY(b, x, t) - ht;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      for (var i = STEPS; i >= 0; i--) {
+        var x = (i / STEPS) * W;
+        ctx.lineTo(x, bandY(b, x, t) + ht);
+      }
+      ctx.closePath();
+
+      var g = ctx.createLinearGradient(0, cy - ht * 2.2, 0, cy + ht * 2.2);
+      g.addColorStop(0,    'hsla(' + b.hue + ',68%,55%,0)');
+      g.addColorStop(0.30, 'hsla(' + b.hue + ',68%,55%,0.055)');
+      g.addColorStop(0.50, 'hsla(' + b.hue + ',72%,62%,0.10)');
+      g.addColorStop(0.70, 'hsla(' + b.hue + ',68%,55%,0.055)');
+      g.addColorStop(1,    'hsla(' + b.hue + ',68%,55%,0)');
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      // Bright core stroke
+      ctx.beginPath();
+      for (var i = 0; i <= STEPS; i++) {
+        var x = (i / STEPS) * W;
+        var y = bandY(b, x, t);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = 'hsla(' + b.hue + ',72%,70%,0.09)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    function draw() {
+      var now = performance.now();
+      var t = (now - t0) * 0.001;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Stars beneath the aurora
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        var tw = 0.45 + 0.55 * Math.sin(t * s.tv + s.ts);
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, s.r, 0, 6.2832);
+        ctx.fillStyle = 'rgba(190,255,210,' + (s.a * tw).toFixed(3) + ')';
+        ctx.fill();
+      }
+
+      // Aurora ribbons
+      for (var i = 0; i < BANDS.length; i++) {
+        drawBand(BANDS[i], t);
+      }
+
+      // Soft mouse glow on top
+      if (mX > -100) {
+        var mg = ctx.createRadialGradient(mX, mY, 0, mX, mY, 200);
+        mg.addColorStop(0,   'rgba(34,197,94,0.08)');
+        mg.addColorStop(0.5, 'rgba(34,197,94,0.03)');
+        mg.addColorStop(1,   'rgba(34,197,94,0)');
+        ctx.fillStyle = mg;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }());
+
 }());
