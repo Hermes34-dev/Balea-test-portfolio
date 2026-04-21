@@ -42,9 +42,9 @@ const envTexture = pmremGenerator.fromScene(new RoomEnvironment(renderer), 0.04)
 pmremGenerator.dispose();
 
 const scene = new THREE.Scene();
-// Animated gradient background: diagonal deep-indigo → blue-violet → vivid magenta,
-// with two accent glows (royal blue + hot pink) that slowly orbit.
-// Inspired by bold tech-brand gradients — canvas 256² redrawn each frame (cheap).
+// Animated gradient background: diagonal deep forest-green → dark teal → near-black green,
+// with two accent glows (bright #22c55e + muted teal) that slowly orbit.
+// Matches the portfolio green theme — canvas 256² redrawn each frame (cheap).
 const _bgCv  = document.createElement('canvas');
 _bgCv.width  = 256; _bgCv.height = 256;
 const _bgCtx = _bgCv.getContext('2d');
@@ -63,27 +63,27 @@ function _updateBg(now) {
   const x2 = W * (1.0 - Math.sin(t*0.28)*0.08);
   const y2 = H * (1.0 - Math.cos(t*0.20)*0.08);
   const base = _bgCtx.createLinearGradient(x1, y1, x2, y2);
-  base.addColorStop(0,    `hsl(${(232+Math.sin(t*0.5)*8).toFixed(1)},72%,13%)`);  // deep indigo
-  base.addColorStop(0.45, `hsl(${(262+Math.sin(t*0.4)*10).toFixed(1)},68%,16%)`); // blue-violet
-  base.addColorStop(1,    `hsl(${(312+Math.sin(t*0.6)*10).toFixed(1)},80%,20%)`); // vivid magenta
+  base.addColorStop(0,    `hsl(${(140+Math.sin(t*0.5)*6).toFixed(1)},55%,5%)`);   // deep forest green
+  base.addColorStop(0.50, `hsl(${(155+Math.sin(t*0.4)*8).toFixed(1)},50%,7%)`);   // dark teal-green
+  base.addColorStop(1,    `hsl(${(130+Math.sin(t*0.6)*6).toFixed(1)},45%,4%)`);   // near-black green
   _bgCtx.fillStyle = base;
   _bgCtx.fillRect(0, 0, W, H);
 
-  // Royal-blue accent glow (drifts top-left area)
-  const bx = W * (0.18 + Math.sin(t*0.9)*0.12);
-  const by = H * (0.22 + Math.cos(t*0.7)*0.14);
-  const bg = _bgCtx.createRadialGradient(bx, by, 0, bx, by, W*0.52);
-  bg.addColorStop(0, 'hsla(225,90%,45%,0.50)');
-  bg.addColorStop(1, 'hsla(225,90%,45%,0)');
+  // Bright green accent glow — #22c55e palette, drifts top-left area
+  const bx = W * (0.22 + Math.sin(t*0.9)*0.14);
+  const by = H * (0.20 + Math.cos(t*0.7)*0.16);
+  const bg = _bgCtx.createRadialGradient(bx, by, 0, bx, by, W*0.48);
+  bg.addColorStop(0, 'hsla(142,71%,30%,0.42)');
+  bg.addColorStop(1, 'hsla(142,71%,30%,0)');
   _bgCtx.fillStyle = bg;
   _bgCtx.fillRect(0, 0, W, H);
 
-  // Hot-pink accent glow (drifts bottom-right area)
-  const px = W * (0.78 + Math.sin(t*0.65)*0.12);
-  const py = H * (0.75 + Math.cos(t*0.85)*0.10);
-  const pg = _bgCtx.createRadialGradient(px, py, 0, px, py, W*0.44);
-  pg.addColorStop(0, 'hsla(320,100%,50%,0.45)');
-  pg.addColorStop(1, 'hsla(320,100%,50%,0)');
+  // Teal accent glow — drifts bottom-right area
+  const px = W * (0.76 + Math.sin(t*0.65)*0.12);
+  const py = H * (0.74 + Math.cos(t*0.85)*0.12);
+  const pg = _bgCtx.createRadialGradient(px, py, 0, px, py, W*0.40);
+  pg.addColorStop(0, 'hsla(165,70%,22%,0.38)');
+  pg.addColorStop(1, 'hsla(165,70%,22%,0)');
   _bgCtx.fillStyle = pg;
   _bgCtx.fillRect(0, 0, W, H);
 
@@ -431,10 +431,16 @@ function buildBunny() {
   }
   geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
 
-  const mat = new THREE.MeshPhongMaterial({
-    vertexColors: true,
-    flatShading:  true,
-    shininess:    40,
+  const mat = new THREE.MeshPhysicalMaterial({
+    vertexColors:        true,
+    flatShading:         true,
+    roughness:           0.05,
+    metalness:           0.0,
+    transparent:         true,
+    opacity:             0.48,
+    clearcoat:           0.9,
+    clearcoatRoughness:  0.04,
+    side:                THREE.DoubleSide,
   });
 
   // Purely decorative — no hotspot, no raycasting target
