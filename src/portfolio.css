@@ -197,61 +197,16 @@ img { display: block; max-width: 100%; }
 .hero-bg {
   position: absolute;
   inset: 0;
-  overflow: hidden;
   pointer-events: none;
 }
 
-/* Floating gradient orbs — GPU-composited CSS animation */
-.hb-orb {
+#hero-canvas {
   position: absolute;
-  border-radius: 50%;
-  will-change: transform;
-}
-
-.hb-orb-a {
-  width: min(800px, 140vw);
-  height: min(800px, 140vw);
-  background: radial-gradient(circle, rgba(34, 197, 94, 0.20) 0%, rgba(34, 197, 94, 0.07) 35%, transparent 65%);
-  top: -35%;
-  left: -18%;
-  animation: hbA 26s ease-in-out infinite;
-}
-
-.hb-orb-b {
-  width: min(640px, 110vw);
-  height: min(640px, 110vw);
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.05) 40%, transparent 68%);
-  bottom: -28%;
-  right: -14%;
-  animation: hbB 32s ease-in-out infinite;
-}
-
-.hb-orb-c {
-  width: min(500px, 88vw);
-  height: min(500px, 88vw);
-  background: radial-gradient(circle, rgba(74, 222, 128, 0.12) 0%, transparent 62%);
-  top: 10%;
-  right: 8%;
-  animation: hbC 21s ease-in-out infinite;
-}
-
-@keyframes hbA {
-  0%,  100% { transform: translate(0px,   0px)  scale(1.00); }
-  30%        { transform: translate(45px,  60px) scale(1.07); }
-  65%        { transform: translate(-30px, 38px) scale(0.95); }
-}
-
-@keyframes hbB {
-  0%,  100% { transform: translate(0px,   0px)   scale(1.00); }
-  40%        { transform: translate(-55px, -50px) scale(1.09); }
-  72%        { transform: translate(32px,  -28px) scale(0.93); }
-}
-
-@keyframes hbC {
-  0%,  100% { transform: translate(0px,   0px)   scale(1.00); }
-  25%        { transform: translate(28px,  -44px) scale(1.13); }
-  55%        { transform: translate(-38px, 22px)  scale(0.90); }
-  80%        { transform: translate(18px,  34px)  scale(1.05); }
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .hero-inner {

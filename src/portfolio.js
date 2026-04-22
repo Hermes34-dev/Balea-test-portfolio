@@ -192,4 +192,89 @@ import { PROJECTS } from './projects-data.js';
     }
   });
 
+  // ── Hero: flow-field particle trails ────────────────────────────────
+  (function () {
+    var heroEl = document.getElementById('hero');
+    var canvas = document.getElementById('hero-canvas');
+    if (!heroEl || !canvas) return;
+
+    var ctx = canvas.getContext('2d');
+    var W = 1, H = 1;
+    var t0 = performance.now();
+    var parts = [];
+
+    // Fewer particles on narrow screens to stay smooth
+    function partCount() { return window.innerWidth < 600 ? 130 : 240; }
+
+    function spawnPart(warm) {
+      var life = Math.random() * 180 + 60;
+      return {
+        x:       Math.random() * W,
+        y:       Math.random() * H,
+        life:    warm ? Math.floor(Math.random() * life) : life,
+        maxLife: life,
+        hue:     130 + Math.random() * 30   // green → teal range
+      };
+    }
+
+    function resize() {
+      W = canvas.width  = heroEl.offsetWidth;
+      H = canvas.height = heroEl.offsetHeight;
+      ctx.clearRect(0, 0, W, H);
+      var n = partCount();
+      parts = [];
+      for (var i = 0; i < n; i++) parts.push(spawnPart(true));
+    }
+    resize();
+    window.addEventListener('resize', resize, { passive: true });
+
+    // Smooth vector field from layered sines — no Perlin lib needed
+    function fieldAngle(x, y, t) {
+      var nx = x / W, ny = y / H;
+      return (
+        Math.sin(nx * 3.1 + t * 0.17) * 0.85 +
+        Math.cos(ny * 2.7 - t * 0.13) * 0.70 +
+        Math.sin((nx + ny) * 2.3 + t * 0.21) * 0.55 +
+        Math.cos(nx * 1.6 - ny * 2.4 + t * 0.10) * 0.45
+      ) * Math.PI;
+    }
+
+    function draw() {
+      var now = performance.now();
+      var t   = (now - t0) * 0.001;
+
+      // Overdraw with bg colour at low alpha — creates fading trails
+      ctx.fillStyle = 'rgba(7,18,11,0.055)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.lineWidth = 0.85;
+
+      for (var i = 0; i < parts.length; i++) {
+        var p  = parts[i];
+        var a  = fieldAngle(p.x, p.y, t);
+        var nx = p.x + Math.cos(a) * 1.15;
+        var ny = p.y + Math.sin(a) * 1.15;
+
+        // Alpha: fade in first 15%, fade out last 15% of lifetime
+        var lr    = p.life / p.maxLife;
+        var alpha = (lr < 0.15 ? lr / 0.15 : lr > 0.85 ? (1 - lr) / 0.15 : 1.0) * 0.42;
+
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(nx, ny);
+        ctx.strokeStyle = 'hsla(' + p.hue.toFixed(0) + ',68%,58%,' + alpha.toFixed(3) + ')';
+        ctx.stroke();
+
+        p.x = nx;  p.y = ny;  p.life--;
+
+        if (p.life <= 0 || p.x < -4 || p.x > W + 4 || p.y < -4 || p.y > H + 4) {
+          parts[i] = spawnPart(false);
+        }
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }());
+
 }());
