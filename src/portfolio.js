@@ -192,7 +192,7 @@ import { PROJECTS } from './projects-data.js';
     }
   });
 
-  // ── Hero: flow-field particle trails ────────────────────────────────
+  // ── Hero: boids flocking simulation ─────────────────────────────────
   (function () {
     var heroEl = document.getElementById('hero');
     var canvas = document.getElementById('hero-canvas');
@@ -200,81 +200,95 @@ import { PROJECTS } from './projects-data.js';
 
     var ctx = canvas.getContext('2d');
     var W = 1, H = 1;
-    var t0 = performance.now();
-    var parts = [];
+    var boids = [];
+    var N = 0;
 
-    // Fewer particles on narrow screens to stay smooth
-    function partCount() { return window.innerWidth < 600 ? 130 : 240; }
+    // ── Tuning ────────────────────────────────────────
+    var SEP_R = 26,  ALI_R = 58,  COH_R = 82;   // radii
+    var SEP_W = 1.7, ALI_W = 1.0, COH_W = 0.85; // rule weights
+    var MAX_SPD = 2.1, MIN_SPD = 0.85, MAX_F = 0.055;
 
-    function spawnPart(warm) {
-      var life = Math.random() * 180 + 60;
-      return {
-        x:       Math.random() * W,
-        y:       Math.random() * H,
-        life:    warm ? Math.floor(Math.random() * life) : life,
-        maxLife: life,
-        hue:     130 + Math.random() * 30   // green → teal range
-      };
+    function norm(vx, vy, len) {
+      var l = Math.sqrt(vx * vx + vy * vy);
+      return l < 0.001 ? [0, 0] : [vx / l * len, vy / l * len];
+    }
+    function clampF(dx, dy) {
+      var l = Math.sqrt(dx * dx + dy * dy);
+      return l > MAX_F ? [dx / l * MAX_F, dy / l * MAX_F] : [dx, dy];
     }
 
     function resize() {
       W = canvas.width  = heroEl.offsetWidth;
       H = canvas.height = heroEl.offsetHeight;
       ctx.clearRect(0, 0, W, H);
-      var n = partCount();
-      parts = [];
-      for (var i = 0; i < n; i++) parts.push(spawnPart(true));
+      N = W < 600 ? 65 : 120;
+      boids = [];
+      for (var i = 0; i < N; i++) {
+        var a = Math.random() * Math.PI * 2;
+        var s = MIN_SPD + Math.random() * (MAX_SPD - MIN_SPD);
+        boids.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: Math.cos(a) * s,  vy: Math.sin(a) * s,
+          hue: 132 + Math.random() * 28
+        });
+      }
     }
     resize();
     window.addEventListener('resize', resize, { passive: true });
 
-    // Smooth vector field from layered sines — no Perlin lib needed
-    function fieldAngle(x, y, t) {
-      var nx = x / W, ny = y / H;
-      return (
-        Math.sin(nx * 3.1 + t * 0.17) * 0.85 +
-        Math.cos(ny * 2.7 - t * 0.13) * 0.70 +
-        Math.sin((nx + ny) * 2.3 + t * 0.21) * 0.55 +
-        Math.cos(nx * 1.6 - ny * 2.4 + t * 0.10) * 0.45
-      ) * Math.PI;
-    }
-
-    function draw() {
-      var now = performance.now();
-      var t   = (now - t0) * 0.001;
-
-      // Overdraw with bg colour at low alpha — creates fading trails
-      ctx.fillStyle = 'rgba(7,18,11,0.055)';
+    function frame() {
+      // Fade canvas → glowing trails
+      ctx.fillStyle = 'rgba(7,18,11,0.062)';
       ctx.fillRect(0, 0, W, H);
 
-      ctx.lineWidth = 0.85;
+      for (var i = 0; i < N; i++) {
+        var b = boids[i];
 
-      for (var i = 0; i < parts.length; i++) {
-        var p  = parts[i];
-        var a  = fieldAngle(p.x, p.y, t);
-        var nx = p.x + Math.cos(a) * 1.15;
-        var ny = p.y + Math.sin(a) * 1.15;
+        var sx=0, sy=0, sn=0;
+        var ax=0, ay=0, an=0;
+        var cx=0, cy=0, cn=0;
 
-        // Alpha: fade in first 15%, fade out last 15% of lifetime
-        var lr    = p.life / p.maxLife;
-        var alpha = (lr < 0.15 ? lr / 0.15 : lr > 0.85 ? (1 - lr) / 0.15 : 1.0) * 0.42;
-
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(nx, ny);
-        ctx.strokeStyle = 'hsla(' + p.hue.toFixed(0) + ',68%,58%,' + alpha.toFixed(3) + ')';
-        ctx.stroke();
-
-        p.x = nx;  p.y = ny;  p.life--;
-
-        if (p.life <= 0 || p.x < -4 || p.x > W + 4 || p.y < -4 || p.y > H + 4) {
-          parts[i] = spawnPart(false);
+        for (var j = 0; j < N; j++) {
+          if (i === j) continue;
+          var o = boids[j];
+          var dx = o.x - b.x, dy = o.y - b.y;
+          var d  = Math.sqrt(dx * dx + dy * dy);
+          if (d < SEP_R)             { sx -= dx / d; sy -= dy / d; sn++; }
+          if (d < ALI_R)             { ax += o.vx;   ay += o.vy;   an++; }
+          if (d < COH_R)             { cx += o.x;    cy += o.y;    cn++; }
         }
+
+        var fx = 0, fy = 0, sv, f;
+        if (sn) { sv=norm(sx/sn,sy/sn,MAX_SPD); f=clampF(sv[0]-b.vx,sv[1]-b.vy); fx+=f[0]*SEP_W; fy+=f[1]*SEP_W; }
+        if (an) { sv=norm(ax/an,ay/an,MAX_SPD); f=clampF(sv[0]-b.vx,sv[1]-b.vy); fx+=f[0]*ALI_W; fy+=f[1]*ALI_W; }
+        if (cn) { sv=norm(cx/cn-b.x,cy/cn-b.y,MAX_SPD); f=clampF(sv[0]-b.vx,sv[1]-b.vy); fx+=f[0]*COH_W; fy+=f[1]*COH_W; }
+
+        b.vx += fx; b.vy += fy;
+        var sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        if      (sp > MAX_SPD && sp > 0) { b.vx = b.vx/sp*MAX_SPD; b.vy = b.vy/sp*MAX_SPD; }
+        else if (sp < MIN_SPD && sp > 0) { b.vx = b.vx/sp*MIN_SPD; b.vy = b.vy/sp*MIN_SPD; }
+
+        b.x += b.vx; b.y += b.vy;
+        if (b.x < 0) b.x += W; else if (b.x > W) b.x -= W;
+        if (b.y < 0) b.y += H; else if (b.y > H) b.y -= H;
+
+        // Draw as a small arrow-triangle pointing in direction of travel
+        sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        if (sp < 0.001) continue;
+        var nx = b.vx / sp, ny = b.vy / sp;
+        var L = 6.5, S = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(b.x + nx * L,           b.y + ny * L);
+        ctx.lineTo(b.x - nx * S - ny * S,  b.y - ny * S + nx * S);
+        ctx.lineTo(b.x - nx * S + ny * S,  b.y - ny * S - nx * S);
+        ctx.closePath();
+        ctx.fillStyle = 'hsla(' + b.hue + ',70%,62%,0.72)';
+        ctx.fill();
       }
 
-      requestAnimationFrame(draw);
+      requestAnimationFrame(frame);
     }
-    draw();
+    frame();
   }());
 
 }());

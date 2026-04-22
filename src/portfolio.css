@@ -983,11 +983,20 @@ footer {
 .project-img {
   /* bleed to card edges; card padding is 22px */
   margin: -22px -22px 0;
-  height: 160px;
+  aspect-ratio: 16 / 9;
   border-radius: var(--radius) var(--radius) 0 0;
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
+}
+
+.project-img::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 40px;
+  background: linear-gradient(transparent, var(--bg-2));
+  pointer-events: none;
 }
 
 .project-img img {
