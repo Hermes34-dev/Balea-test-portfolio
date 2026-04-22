@@ -106,6 +106,28 @@ import { PROJECTS } from './projects-data.js';
         '</div></div>';
     }
 
+    var mediaHTML = '';
+    if (p.media && p.media.length) {
+      var items = p.media.map(function (m) {
+        if (m.type === 'youtube') {
+          return '<div class="pp-mi pp-mi-yt">' +
+            '<iframe src="https://www.youtube-nocookie.com/embed/' + esc(m.id) +
+            '?rel=0&modestbranding=1" title="' + esc(m.title || p.title) +
+            '" allow="accelerometer;autoplay;clipboard-write;encrypted-media;picture-in-picture"' +
+            ' allowfullscreen loading="lazy"></iframe>' +
+            '</div>';
+        }
+        return '<div class="pp-mi">' +
+          '<img src="' + esc(m.src) + '" alt="' + esc(m.alt || '') +
+          '" loading="lazy" class="pp-mi-img" />' +
+          '</div>';
+      }).join('');
+      mediaHTML = '<div class="pp-section">' +
+        '<h3 class="pp-section-label">Gallery</h3>' +
+        '<div class="pp-gallery-strip">' + items + '</div>' +
+        '</div>';
+    }
+
     return imgSection +
       '<div class="pp-hero-section">' +
         '<div class="pp-title-row">' +
@@ -127,7 +149,8 @@ import { PROJECTS } from './projects-data.js';
         '<h3 class="pp-section-label">Tech Stack</h3>' +
         '<div class="chips">' + chipsHTML + '</div>' +
       '</div>' +
-      linksHTML;
+      linksHTML +
+      mediaHTML;
   }
 
   // ── Project detail panel ─────────────────────────────────────────────
@@ -158,8 +181,26 @@ import { PROJECTS } from './projects-data.js';
   if (ppCloseBtn)  ppCloseBtn.addEventListener('click', closeProjectPanel);
   if (ppBackdrop)  ppBackdrop.addEventListener('click', closeProjectPanel);
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeProjectPanel();
+    if (e.key !== 'Escape') return;
+    var lb = document.getElementById('pp-lightbox');
+    if (lb) { lb.remove(); return; }
+    closeProjectPanel();
   });
+
+  // Image lightbox — delegated on the panel body
+  if (ppBody) {
+    ppBody.addEventListener('click', function (e) {
+      if (!e.target.classList.contains('pp-mi-img')) return;
+      var lb = document.createElement('div');
+      lb.id = 'pp-lightbox';
+      lb.setAttribute('role', 'dialog');
+      lb.setAttribute('aria-modal', 'true');
+      lb.innerHTML = '<div class="pp-lb-inner"><img src="' +
+        e.target.src + '" alt="' + e.target.alt + '" /></div>';
+      lb.addEventListener('click', function () { lb.remove(); });
+      document.body.appendChild(lb);
+    });
+  }
 
   // "View project →" buttons
   document.querySelectorAll('.project-view-btn').forEach(function (btn) {

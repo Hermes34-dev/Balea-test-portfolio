@@ -1,11 +1,19 @@
 // ─── Shared project data ────────────────────────────────────────────────────
 // Used by both portfolio.js (portfolio page) and main.js (3D scene).
 //
-// To add a real screenshot for any project, set its `image` field to the URL:
-//   image: 'https://alejandrobalea.com/images/raytracer.jpg'
+// `image`   – hero thumbnail URL (shown on the card and at the top of the panel)
+// `gradient`– fallback background when no image is set
 //
-// The `gradient` field is used as a full-bleed hero background when no image
-// is provided — each one is hand-crafted to the project's mood/domain.
+// `media`   – optional gallery shown at the bottom of the detail panel.
+//             Each entry is one of:
+//
+//   { type: 'image',   src: './images/screenshot.png', alt: 'Caption' }
+//   { type: 'gif',     src: './images/anim.gif',        alt: 'Caption' }
+//   { type: 'youtube', id:  'dQw4w9WgXcQ',              title: 'Trailer' }
+//
+//             Images/GIFs are displayed in a horizontal scroll strip and open
+//             full-size in a lightbox on click. YouTube videos are embedded
+//             inline via youtube-nocookie.com (privacy-friendly).
 // ────────────────────────────────────────────────────────────────────────────
 
 export const PROJECTS = {
@@ -29,6 +37,7 @@ export const PROJECTS = {
     ],
     chips: ['C++', 'Path Tracing', 'BVH', 'GLTF', 'Multithreading'],
     links: [],
+    media: [],
   },
 
   nonogram: {
@@ -50,6 +59,7 @@ export const PROJECTS = {
     ],
     chips: ['Rust', 'Actix-Web', 'React', 'PostgreSQL', 'MinIO', 'REST API'],
     links: [],
+    media: [],
   },
 
   enrouter: {
@@ -69,6 +79,7 @@ export const PROJECTS = {
     ],
     chips: ['VRPTW', 'Operations Research', 'Optimisation', 'C++'],
     links: [],
+    media: [],
   },
 
   fair: {
@@ -92,6 +103,7 @@ export const PROJECTS = {
     ],
     chips: ['C++', 'Python', 'Docker', 'RabbitMQ', 'OpenSSL', 'REST API', 'Backend', 'DevOps'],
     links: [],
+    media: [],
   },
 
   arruyo: {
@@ -116,6 +128,7 @@ export const PROJECTS = {
     links: [
       { label: 'View on Steam', url: 'https://store.steampowered.com/app/1849900/Arruyo/' },
     ],
+    media: [],
   },
 
   arclight2: {
@@ -139,6 +152,7 @@ export const PROJECTS = {
     ],
     chips: ['C++', 'OpenGL', 'ECS', 'GLSL', 'Shadow Mapping', 'Custom Engine'],
     links: [],
+    media: [],
   },
 
   entails: {
@@ -161,5 +175,6 @@ export const PROJECTS = {
     ],
     chips: ['C++', 'OpenGL', 'ImGui', '2D Graphics', 'Custom Engine'],
     links: [],
+    media: [],
   },
 };
