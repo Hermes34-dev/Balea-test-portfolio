@@ -243,10 +243,12 @@ import { PROJECTS } from './projects-data.js';
     var W = 1, H = 1;
     var boids = [];
     var N = 0;
+    var lastW = 0; // only reinit boids when WIDTH changes (not height)
 
     // ── Tuning ────────────────────────────────────────
-    var SEP_R = 26,  ALI_R = 58,  COH_R = 82;   // radii
-    var SEP_W = 1.7, ALI_W = 1.0, COH_W = 0.85; // rule weights
+    var TAIL    = 28;
+    var SEP_R   = 26,  ALI_R  = 58,  COH_R  = 82;
+    var SEP_W   = 1.7, ALI_W  = 1.0, COH_W  = 0.85;
     var MAX_SPD = 2.1, MIN_SPD = 0.85, MAX_F = 0.055;
 
     function norm(vx, vy, len) {
@@ -257,48 +259,64 @@ import { PROJECTS } from './projects-data.js';
       var l = Math.sqrt(dx * dx + dy * dy);
       return l > MAX_F ? [dx / l * MAX_F, dy / l * MAX_F] : [dx, dy];
     }
+    function makeBoid() {
+      var a = Math.random() * Math.PI * 2;
+      var s = MIN_SPD + Math.random() * (MAX_SPD - MIN_SPD);
+      return {
+        x: Math.random() * W, y: Math.random() * H,
+        vx: Math.cos(a) * s,  vy: Math.sin(a) * s,
+        hue: 132 + Math.random() * 28,
+        trail: []
+      };
+    }
 
     function resize() {
-      W = canvas.width  = heroEl.offsetWidth;
-      H = canvas.height = heroEl.offsetHeight;
-      ctx.clearRect(0, 0, W, H);
-      N = W < 600 ? 65 : 120;
-      boids = [];
-      for (var i = 0; i < N; i++) {
-        var a = Math.random() * Math.PI * 2;
-        var s = MIN_SPD + Math.random() * (MAX_SPD - MIN_SPD);
-        boids.push({
-          x: Math.random() * W, y: Math.random() * H,
-          vx: Math.cos(a) * s,  vy: Math.sin(a) * s,
-          hue: 132 + Math.random() * 28
-        });
+      var newW = heroEl.offsetWidth;
+      var newH = heroEl.offsetHeight;
+      if (canvas.width === newW && canvas.height === newH) return;
+
+      canvas.width  = newW;
+      canvas.height = newH;
+
+      if (newW !== lastW || boids.length === 0) {
+        // Real layout change (orientation, window resize) → full reinit
+        lastW = newW;
+        W = newW; H = newH;
+        N = W < 600 ? 65 : 120;
+        boids = [];
+        for (var i = 0; i < N; i++) boids.push(makeBoid());
+      } else {
+        // Height-only change: mobile toolbar hide/show while scrolling.
+        // Keep boids running — just clamp any y that fell out of the new bounds.
+        W = newW; H = newH;
+        for (var i = 0; i < boids.length; i++) {
+          if (boids[i].y > H) boids[i].y = Math.random() * H;
+        }
       }
     }
     resize();
     window.addEventListener('resize', resize, { passive: true });
 
     function frame() {
-      // Fade canvas → glowing trails
-      ctx.fillStyle = 'rgba(7,18,11,0.062)';
-      ctx.fillRect(0, 0, W, H);
+      // Clear cleanly each frame — trails are stored per boid, not in canvas pixels.
+      ctx.clearRect(0, 0, W, H);
 
       for (var i = 0; i < N; i++) {
         var b = boids[i];
 
+        // ── Flocking forces ───────────────────────────
         var sx=0, sy=0, sn=0;
         var ax=0, ay=0, an=0;
         var cx=0, cy=0, cn=0;
-
         for (var j = 0; j < N; j++) {
           if (i === j) continue;
           var o = boids[j];
           var dx = o.x - b.x, dy = o.y - b.y;
           var d  = Math.sqrt(dx * dx + dy * dy);
-          if (d < SEP_R)             { sx -= dx / d; sy -= dy / d; sn++; }
-          if (d < ALI_R)             { ax += o.vx;   ay += o.vy;   an++; }
-          if (d < COH_R)             { cx += o.x;    cy += o.y;    cn++; }
+          if (d < SEP_R) { sx -= dx / d; sy -= dy / d; sn++; }
+          if (d < ALI_R) { ax += o.vx;   ay += o.vy;   an++; }
+          if (d < COH_R) { cx += o.x;    cy += o.y;    cn++; }
         }
-
         var fx = 0, fy = 0, sv, f;
         if (sn) { sv=norm(sx/sn,sy/sn,MAX_SPD); f=clampF(sv[0]-b.vx,sv[1]-b.vy); fx+=f[0]*SEP_W; fy+=f[1]*SEP_W; }
         if (an) { sv=norm(ax/an,ay/an,MAX_SPD); f=clampF(sv[0]-b.vx,sv[1]-b.vy); fx+=f[0]*ALI_W; fy+=f[1]*ALI_W; }
@@ -309,21 +327,38 @@ import { PROJECTS } from './projects-data.js';
         if      (sp > MAX_SPD && sp > 0) { b.vx = b.vx/sp*MAX_SPD; b.vy = b.vy/sp*MAX_SPD; }
         else if (sp < MIN_SPD && sp > 0) { b.vx = b.vx/sp*MIN_SPD; b.vy = b.vy/sp*MIN_SPD; }
 
+        // Record current position into trail, then move
+        b.trail.push({ x: b.x, y: b.y });
+        if (b.trail.length > TAIL) b.trail.shift();
+
         b.x += b.vx; b.y += b.vy;
         if (b.x < 0) b.x += W; else if (b.x > W) b.x -= W;
         if (b.y < 0) b.y += H; else if (b.y > H) b.y -= H;
 
-        // Draw as a small arrow-triangle pointing in direction of travel
+        // ── Draw trail (oldest → head) ────────────────
+        var tlen = b.trail.length;
+        for (var k = 0; k < tlen - 1; k++) {
+          var t0 = b.trail[k], t1 = b.trail[k + 1];
+          var alpha = ((k + 1) / tlen) * 0.48;
+          ctx.beginPath();
+          ctx.moveTo(t0.x, t0.y);
+          ctx.lineTo(t1.x, t1.y);
+          ctx.strokeStyle = 'hsla(' + b.hue + ',70%,62%,' + alpha.toFixed(3) + ')';
+          ctx.lineWidth = 0.9;
+          ctx.stroke();
+        }
+
+        // ── Draw boid head as arrow-triangle ──────────
         sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
         if (sp < 0.001) continue;
         var nx = b.vx / sp, ny = b.vy / sp;
         var L = 6.5, S = 2.6;
         ctx.beginPath();
-        ctx.moveTo(b.x + nx * L,           b.y + ny * L);
-        ctx.lineTo(b.x - nx * S - ny * S,  b.y - ny * S + nx * S);
-        ctx.lineTo(b.x - nx * S + ny * S,  b.y - ny * S - nx * S);
+        ctx.moveTo(b.x + nx * L,          b.y + ny * L);
+        ctx.lineTo(b.x - nx * S - ny * S, b.y - ny * S + nx * S);
+        ctx.lineTo(b.x - nx * S + ny * S, b.y - ny * S - nx * S);
         ctx.closePath();
-        ctx.fillStyle = 'hsla(' + b.hue + ',70%,62%,0.72)';
+        ctx.fillStyle = 'hsla(' + b.hue + ',70%,62%,0.75)';
         ctx.fill();
       }
 
