@@ -240,16 +240,13 @@ import { PROJECTS } from './projects-data.js';
     if (!heroEl || !canvas) return;
 
     var ctx = canvas.getContext('2d');
-    var W = 1, H = 1;
+    var W = 0, H = 0, N = 0;
     var boids = [];
-    var N = 0;
-    var lastW = 0; // only reinit boids when WIDTH changes (not height)
 
-    // ── Tuning ────────────────────────────────────────
-    var TAIL    = 28;
-    var SEP_R   = 26,  ALI_R  = 58,  COH_R  = 82;
+    var TAIL    = 32;
+    var SEP_R   = 28,  ALI_R  = 60,  COH_R  = 85;
     var SEP_W   = 1.7, ALI_W  = 1.0, COH_W  = 0.85;
-    var MAX_SPD = 2.1, MIN_SPD = 0.85, MAX_F = 0.055;
+    var MAX_SPD = 2.0, MIN_SPD = 0.8, MAX_F  = 0.055;
 
     function norm(vx, vy, len) {
       var l = Math.sqrt(vx * vx + vy * vy);
@@ -270,34 +267,23 @@ import { PROJECTS } from './projects-data.js';
       };
     }
 
-    function resize() {
-      var newW = heroEl.offsetWidth;
-      var newH = heroEl.offsetHeight;
-      if (newW === W && newH === H) return;
-
-      if (newW !== lastW || boids.length === 0) {
-        // Width changed (real resize / orientation flip) → full reinit
-        lastW = newW;
-        W = canvas.width  = newW;
-        H = canvas.height = newH;
-        N = W < 600 ? 65 : 120;
-        boids = [];
-        for (var i = 0; i < N; i++) boids.push(makeBoid());
-      } else {
-        // Height-only change (mobile browser toolbar appearing/hiding).
-        // Update H but do NOT touch canvas.width/height — assigning to those
-        // always clears the pixel buffer, causing a visible "jump".
-        H = newH;
-        for (var i = 0; i < boids.length; i++) {
-          if (boids[i].y > H) boids[i].y = Math.random() * H;
-        }
-      }
+    function init() {
+      W = canvas.width  = heroEl.offsetWidth;
+      H = canvas.height = heroEl.offsetHeight;
+      N = W < 600 ? 80 : 120;
+      boids = [];
+      for (var i = 0; i < N; i++) boids.push(makeBoid());
     }
-    resize();
-    window.addEventListener('resize', resize, { passive: true });
+    init();
+
+    // Only reinit on significant WIDTH change (orientation flip, desktop resize).
+    // Height-only changes (mobile toolbar sliding in/out) are ignored — touching
+    // canvas.height always clears the buffer and causes a visible reset.
+    window.addEventListener('resize', function () {
+      if (Math.abs(heroEl.offsetWidth - W) > 10) init();
+    }, { passive: true });
 
     function frame() {
-      // Clear cleanly each frame — trails are stored per boid, not in canvas pixels.
       ctx.clearRect(0, 0, W, H);
 
       for (var i = 0; i < N; i++) {
@@ -309,7 +295,7 @@ import { PROJECTS } from './projects-data.js';
         var cx=0, cy=0, cn=0;
         for (var j = 0; j < N; j++) {
           if (i === j) continue;
-          var o = boids[j];
+          var o  = boids[j];
           var dx = o.x - b.x, dy = o.y - b.y;
           var d  = Math.sqrt(dx * dx + dy * dy);
           if (d < SEP_R) { sx -= dx / d; sy -= dy / d; sn++; }
@@ -328,43 +314,40 @@ import { PROJECTS } from './projects-data.js';
 
         b.x += b.vx; b.y += b.vy;
 
-        // Wrap edges — clear trail when wrapping to avoid a line
-        // spanning the full canvas width/height.
+        // Wrap edges — clear trail on teleport to avoid cross-canvas lines
         var wrapped = false;
-        if      (b.x < 0)  { b.x += W; wrapped = true; }
-        else if (b.x > W)  { b.x -= W; wrapped = true; }
-        if      (b.y < 0)  { b.y += H; wrapped = true; }
-        else if (b.y > H)  { b.y -= H; wrapped = true; }
+        if      (b.x < 0) { b.x += W; wrapped = true; }
+        else if (b.x > W) { b.x -= W; wrapped = true; }
+        if      (b.y < 0) { b.y += H; wrapped = true; }
+        else if (b.y > H) { b.y -= H; wrapped = true; }
         if (wrapped) b.trail.length = 0;
 
-        // Record new position into trail
         b.trail.push({ x: b.x, y: b.y });
         if (b.trail.length > TAIL) b.trail.shift();
 
-        // ── Draw trail (oldest → head) ────────────────
+        // ── Draw trail ────────────────────────────────
         var tlen = b.trail.length;
         for (var k = 0; k < tlen - 1; k++) {
           var t0 = b.trail[k], t1 = b.trail[k + 1];
-          var alpha = ((k + 1) / tlen) * 0.48;
           ctx.beginPath();
           ctx.moveTo(t0.x, t0.y);
           ctx.lineTo(t1.x, t1.y);
-          ctx.strokeStyle = 'hsla(' + b.hue + ',70%,62%,' + alpha.toFixed(3) + ')';
-          ctx.lineWidth = 0.9;
+          ctx.strokeStyle = 'hsla(' + b.hue + ',70%,62%,' + (((k + 1) / tlen) * 0.55).toFixed(3) + ')';
+          ctx.lineWidth = 1.4;
           ctx.stroke();
         }
 
-        // ── Draw boid head as arrow-triangle ──────────
+        // ── Draw boid head ────────────────────────────
         sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
         if (sp < 0.001) continue;
         var nx = b.vx / sp, ny = b.vy / sp;
-        var L = 6.5, S = 2.6;
+        var L = 11, S = 4.5;
         ctx.beginPath();
         ctx.moveTo(b.x + nx * L,          b.y + ny * L);
         ctx.lineTo(b.x - nx * S - ny * S, b.y - ny * S + nx * S);
         ctx.lineTo(b.x - nx * S + ny * S, b.y - ny * S - nx * S);
         ctx.closePath();
-        ctx.fillStyle = 'hsla(' + b.hue + ',70%,62%,0.75)';
+        ctx.fillStyle = 'hsla(' + b.hue + ',70%,68%,0.82)';
         ctx.fill();
       }
 
