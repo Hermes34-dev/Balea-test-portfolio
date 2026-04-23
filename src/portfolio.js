@@ -273,22 +273,21 @@ import { PROJECTS } from './projects-data.js';
     function resize() {
       var newW = heroEl.offsetWidth;
       var newH = heroEl.offsetHeight;
-      if (canvas.width === newW && canvas.height === newH) return;
-
-      canvas.width  = newW;
-      canvas.height = newH;
+      if (newW === W && newH === H) return;
 
       if (newW !== lastW || boids.length === 0) {
-        // Real layout change (orientation, window resize) → full reinit
+        // Width changed (real resize / orientation flip) → full reinit
         lastW = newW;
-        W = newW; H = newH;
+        W = canvas.width  = newW;
+        H = canvas.height = newH;
         N = W < 600 ? 65 : 120;
         boids = [];
         for (var i = 0; i < N; i++) boids.push(makeBoid());
       } else {
-        // Height-only change: mobile toolbar hide/show while scrolling.
-        // Keep boids running — just clamp any y that fell out of the new bounds.
-        W = newW; H = newH;
+        // Height-only change (mobile browser toolbar appearing/hiding).
+        // Update H but do NOT touch canvas.width/height — assigning to those
+        // always clears the pixel buffer, causing a visible "jump".
+        H = newH;
         for (var i = 0; i < boids.length; i++) {
           if (boids[i].y > H) boids[i].y = Math.random() * H;
         }
@@ -327,13 +326,20 @@ import { PROJECTS } from './projects-data.js';
         if      (sp > MAX_SPD && sp > 0) { b.vx = b.vx/sp*MAX_SPD; b.vy = b.vy/sp*MAX_SPD; }
         else if (sp < MIN_SPD && sp > 0) { b.vx = b.vx/sp*MIN_SPD; b.vy = b.vy/sp*MIN_SPD; }
 
-        // Record current position into trail, then move
+        b.x += b.vx; b.y += b.vy;
+
+        // Wrap edges — clear trail when wrapping to avoid a line
+        // spanning the full canvas width/height.
+        var wrapped = false;
+        if      (b.x < 0)  { b.x += W; wrapped = true; }
+        else if (b.x > W)  { b.x -= W; wrapped = true; }
+        if      (b.y < 0)  { b.y += H; wrapped = true; }
+        else if (b.y > H)  { b.y -= H; wrapped = true; }
+        if (wrapped) b.trail.length = 0;
+
+        // Record new position into trail
         b.trail.push({ x: b.x, y: b.y });
         if (b.trail.length > TAIL) b.trail.shift();
-
-        b.x += b.vx; b.y += b.vy;
-        if (b.x < 0) b.x += W; else if (b.x > W) b.x -= W;
-        if (b.y < 0) b.y += H; else if (b.y > H) b.y -= H;
 
         // ── Draw trail (oldest → head) ────────────────
         var tlen = b.trail.length;
