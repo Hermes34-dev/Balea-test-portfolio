@@ -256,34 +256,15 @@ function buildObjects() {
   // ─── 1. Utah Teapot on column → Projects ────────────────────────────
   const pedestalTopL = buildPedestal(-1.8, -1.3, 3.2);   // taller column
 
-  // Rainbow teapot — full-spectrum vertex colours spiralling by angle+height
-  const teapotGeoBase = new TeapotGeometry(0.85, 10);
-  const teapotGeo = teapotGeoBase.toNonIndexed();
-  teapotGeoBase.computeBoundingBox();
-  {
-    const bb = teapotGeoBase.boundingBox;
-    const yRange = bb.max.y - bb.min.y;
-    const pos = teapotGeo.attributes.position;
-    const count = pos.count;
-    const colors = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-      const angle = (Math.atan2(x, z) / (2 * Math.PI) + 0.5);
-      const t     = (y - bb.min.y) / yRange;
-      const hue   = (angle * 0.55 + t * 0.45) % 1.0;
-      const c = new THREE.Color().setHSL(hue, 1.0, 0.60);
-      colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
-    }
-    teapotGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  }
-
+  const teapotGeo = new TeapotGeometry(0.85, 10);
   const teapot = new THREE.Mesh(teapotGeo,
     new THREE.MeshPhysicalMaterial({
-      vertexColors: true,
-      roughness: 0.06,
-      metalness: 0.0,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.04,
+      color:               0xc07830,   // warm burnished bronze
+      metalness:           1.0,
+      roughness:           0.14,
+      envMapIntensity:     1.8,
+      clearcoat:           0.35,
+      clearcoatRoughness:  0.10,
     })
   );
   teapot.rotation.y = -0.5;
@@ -323,29 +304,17 @@ function buildObjects() {
   let gemGeo = new THREE.LatheGeometry(crystalPts, 6, 0, Math.PI * 2);
   gemGeo = gemGeo.toNonIndexed();
   gemGeo.computeVertexNormals();
-  {
-    const aPos  = gemGeo.attributes.position;
-    const aCols = new Float32Array(aPos.count * 3);
-    const yMin = -0.82, yRange = 1.64;
-    for (let i = 0; i < aPos.count; i += 3) {
-      const avgY = (aPos.getY(i) + aPos.getY(i+1) + aPos.getY(i+2)) / 3;
-      const t  = (avgY - yMin) / yRange;          // 0 at base → 1 at tip
-      const h  = 0.72 - t * 0.62;                 // violet → cyan → green → amber
-      const c  = new THREE.Color().setHSL(h, 0.92, 0.56);
-      for (let j = 0; j < 3; j++) {
-        aCols[(i+j)*3]   = c.r;
-        aCols[(i+j)*3+1] = c.g;
-        aCols[(i+j)*3+2] = c.b;
-      }
-    }
-    gemGeo.setAttribute('color', new THREE.BufferAttribute(aCols, 3));
-  }
   const gem = new THREE.Mesh(gemGeo,
-    new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      flatShading: true,
-      roughness: 0.40,
-      metalness: 0.10,
+    new THREE.MeshPhysicalMaterial({
+      color:               0x16a34a,   // emerald green — matches portfolio theme
+      flatShading:         true,
+      transparent:         true,
+      opacity:             0.72,
+      roughness:           0.04,
+      metalness:           0.0,
+      clearcoat:           1.0,
+      clearcoatRoughness:  0.02,
+      side:                THREE.DoubleSide,
     })
   );
   gem.position.set(1.75, -HALF + 1.55, 0.7);
@@ -357,35 +326,20 @@ function buildObjects() {
   // ─── 4. Dodecahedron on column → Contact ────────────────────────────
   const pedestalTopR = buildPedestal(1.7, -1.55, 2.8);   // taller column
 
-  // Multicolor flat-poly dodecahedron — same vibrant vertex-color technique as the bunny
   let dodecGeo = new THREE.DodecahedronGeometry(0.78, 0);
   dodecGeo = dodecGeo.toNonIndexed();
   dodecGeo.computeVertexNormals();
-  {
-    const dPos  = dodecGeo.attributes.position;
-    const dCols = new Float32Array(dPos.count * 3);
-    for (let i = 0; i < dPos.count; i += 3) {
-      // Higher lightness (0.68) so colours remain vivid through the transparency
-      const c = new THREE.Color().setHSL(Math.random(), 0.92, 0.68);
-      for (let j = 0; j < 3; j++) {
-        dCols[(i+j)*3]   = c.r;
-        dCols[(i+j)*3+1] = c.g;
-        dCols[(i+j)*3+2] = c.b;
-      }
-    }
-    dodecGeo.setAttribute('color', new THREE.BufferAttribute(dCols, 3));
-  }
   const dodec = new THREE.Mesh(dodecGeo,
     new THREE.MeshPhysicalMaterial({
-      vertexColors: true,
-      flatShading: true,
-      roughness: 0.05,
-      metalness: 0.0,
-      opacity: 0.52,
-      transparent: true,
-      clearcoat: 0.9,
-      clearcoatRoughness: 0.04,   // coloured glass: each face vivid + glassy sheen
-      side: THREE.DoubleSide,     // inner faces visible through the transparency
+      color:               0x7c3aed,   // amethyst purple
+      flatShading:         true,
+      roughness:           0.05,
+      metalness:           0.0,
+      opacity:             0.60,
+      transparent:         true,
+      clearcoat:           1.0,
+      clearcoatRoughness:  0.04,
+      side:                THREE.DoubleSide,
     })
   );
   dodec.position.set(1.7, 0, -1.55);
@@ -417,33 +371,21 @@ function buildObjects() {
 let bunnyMesh;
 
 function buildBunny() {
-  const geo = new THREE.IcosahedronGeometry(0.52, 1);
-  const pos = geo.attributes.position;
-  const cols = new Float32Array(pos.count * 3);
-
-  for (let i = 0; i < pos.count; i += 3) {
-    const c = new THREE.Color().setHSL(Math.random(), 0.85, 0.55);
-    for (let j = 0; j < 3; j++) {
-      cols[(i+j)*3]   = c.r;
-      cols[(i+j)*3+1] = c.g;
-      cols[(i+j)*3+2] = c.b;
-    }
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  const geo = new THREE.IcosahedronGeometry(0.52, 2);  // detail 2 = smooth orb
 
   const mat = new THREE.MeshPhysicalMaterial({
-    vertexColors:        true,
-    flatShading:         true,
-    roughness:           0.05,
+    color:               0xffffff,
+    flatShading:         false,
+    roughness:           0.0,
     metalness:           0.0,
     transparent:         true,
-    opacity:             0.48,
-    clearcoat:           0.9,
-    clearcoatRoughness:  0.04,
+    opacity:             0.18,
+    clearcoat:           1.0,
+    clearcoatRoughness:  0.0,
     side:                THREE.DoubleSide,
+    envMapIntensity:     2.5,
   });
 
-  // Purely decorative — no hotspot, no raycasting target
   bunnyMesh = new THREE.Mesh(geo, mat);
   bunnyMesh.position.set(0, 2.4, -1.5);
   bunnyMesh.castShadow = true;
