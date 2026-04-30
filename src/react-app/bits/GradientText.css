@@ -1,0 +1,19 @@
+.gradient-text {
+  display: inline;
+  background: var(--grad);
+  background-size: 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: grad-shift var(--speed, 8s) linear infinite;
+}
+.gradient-text.with-border {
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 9999px;
+  padding: 0.1em 0.6em;
+}
+@keyframes grad-shift {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 300% 50%; }
+}

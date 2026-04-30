@@ -1,0 +1,30 @@
+.blur-text   { display: inline; }
+.blur-token  { display: inline-block; opacity: 0; will-change: opacity, filter, transform; }
+
+.blur-token.blur-in { animation: blur-top 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+.blur-token.dir-bottom.blur-in { animation-name: blur-bottom; }
+.blur-token.dir-left.blur-in   { animation-name: blur-left;   }
+.blur-token.dir-right.blur-in  { animation-name: blur-right;  }
+.blur-token.dir-none.blur-in   { animation-name: blur-fade;   }
+
+@keyframes blur-top {
+  from { opacity: 0; filter: blur(12px); transform: translateY(-18px); }
+  to   { opacity: 1; filter: blur(0);    transform: none; }
+}
+@keyframes blur-bottom {
+  from { opacity: 0; filter: blur(12px); transform: translateY(18px); }
+  to   { opacity: 1; filter: blur(0);    transform: none; }
+}
+@keyframes blur-left {
+  from { opacity: 0; filter: blur(12px); transform: translateX(-18px); }
+  to   { opacity: 1; filter: blur(0);    transform: none; }
+}
+@keyframes blur-right {
+  from { opacity: 0; filter: blur(12px); transform: translateX(18px); }
+  to   { opacity: 1; filter: blur(0);    transform: none; }
+}
+@keyframes blur-fade {
+  from { opacity: 0; filter: blur(12px); }
+  to   { opacity: 1; filter: blur(0); }
+}
