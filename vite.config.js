@@ -6,9 +6,10 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main:      './index.html',
-        portfolio: './portfolio.html',
-        react:     './react.html',
+        main:        './index.html',
+        portfolio:   './portfolio.html',
+        react:       './react.html',
+        'not-found': './404.html',
       },
     },
   },

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07120b" />
+  <title>404 — Page Not Found · Alejandro Balea</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #07120b;
+      color: #e2ede4;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100dvh;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ── Layout layers ──────────────────────── */
+    #scene {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Layer 1: block DOM elements (visual only) */
+    #blocks-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* Layer 2: transparent canvas — captures all mouse/touch for physics */
+    #physics-canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: transparent;
+      touch-action: none;
+    }
+
+    /* Layer 3: text + button — sits above canvas */
+    .nf-content {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;   /* pass through to canvas except button */
+      text-align: center;
+      padding: 24px;
+      gap: 0;
+    }
+
+    .nf-big {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(6rem, 22vw, 12rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -4px;
+      color: rgba(255, 255, 255, 0.05);
+      margin-bottom: 12px;
+    }
+
+    .nf-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.1rem, 3.5vw, 1.65rem);
+      font-weight: 700;
+      color: #e2ede4;
+      max-width: 380px;
+      line-height: 1.35;
+      margin-bottom: 28px;
+    }
+
+    .nf-btn {
+      pointer-events: all;   /* the ONE clickable thing above the canvas */
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 32px;
+      background: #22c55e;
+      color: #000;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 9999px;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.15s;
+      box-shadow: 0 4px 20px rgba(34,197,94,0.35);
+      cursor: pointer;
+      position: relative;
+      z-index: 4;   /* above physics-canvas so clicks land here, not canvas */
+    }
+    .nf-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* ── Block cards ────────────────────────── */
+    .nf-block {
+      position: absolute;
+      top: 0; left: 0;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;   /* canvas captures events */
+      will-change: transform;
+      transform-origin: center center;
+      box-shadow:
+        0 14px 36px rgba(0,0,0,0.45),
+        0 3px 10px  rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.14);
+    }
+    .nf-block svg {
+      width: 46px;
+      height: 46px;
+      color: rgba(255, 255, 255, 0.88);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+    }
+
+    /* ── Nav ────────────────────────────────── */
+    .nf-nav {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 18px 24px;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+    .nf-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: #22c55e;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      pointer-events: all;
+    }
+    .nf-hint {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.25);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="scene">
+    <nav class="nf-nav">
+      <a href="/" class="nf-logo">AB</a>
+      <span class="nf-hint">drag the blocks</span>
+    </nav>
+
+    <div id="blocks-layer"></div>
+    <canvas id="physics-canvas"></canvas>
+
+    <div class="nf-content">
+      <p class="nf-big">404</p>
+      <h1 class="nf-title">We can't find the page you're looking for.</h1>
+      <a href="/" class="nf-btn">Take Me Home</a>
+    </div>
+  </div>
+
+  <script type="module" src="/src/not-found.js"></script>
+</body>
+</html>
