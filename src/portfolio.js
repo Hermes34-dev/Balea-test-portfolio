@@ -325,30 +325,36 @@ import { PROJECTS } from './projects-data.js';
         b.trail.push({ x: b.x, y: b.y });
         if (b.trail.length > TAIL) b.trail.shift();
 
-        // ── Draw trail ────────────────────────────────
+        // ── Draw trail with bloom ─────────────────────
         var tlen = b.trail.length;
+        ctx.shadowBlur  = 8;
+        ctx.shadowColor = 'hsla(' + b.hue + ',100%,70%,0.72)';
         for (var k = 0; k < tlen - 1; k++) {
           var t0 = b.trail[k], t1 = b.trail[k + 1];
           ctx.beginPath();
           ctx.moveTo(t0.x, t0.y);
           ctx.lineTo(t1.x, t1.y);
-          ctx.strokeStyle = 'hsla(' + b.hue + ',70%,62%,' + (((k + 1) / tlen) * 0.55).toFixed(3) + ')';
-          ctx.lineWidth = 1.4;
+          ctx.strokeStyle = 'hsla(' + b.hue + ',80%,72%,' + (((k + 1) / tlen) * 0.60).toFixed(3) + ')';
+          ctx.lineWidth = 1.6;
           ctx.stroke();
         }
+        ctx.shadowBlur = 0;
 
         // ── Draw boid head ────────────────────────────
         sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
         if (sp < 0.001) continue;
         var nx = b.vx / sp, ny = b.vy / sp;
         var L = 11, S = 4.5;
+        ctx.shadowBlur  = 18;
+        ctx.shadowColor = 'hsla(' + b.hue + ',100%,80%,1.0)';
         ctx.beginPath();
         ctx.moveTo(b.x + nx * L,          b.y + ny * L);
         ctx.lineTo(b.x - nx * S - ny * S, b.y - ny * S + nx * S);
         ctx.lineTo(b.x - nx * S + ny * S, b.y - ny * S - nx * S);
         ctx.closePath();
-        ctx.fillStyle = 'hsla(' + b.hue + ',70%,68%,0.82)';
+        ctx.fillStyle = 'hsla(' + b.hue + ',85%,80%,0.92)';
         ctx.fill();
+        ctx.shadowBlur = 0;
       }
 
       requestAnimationFrame(frame);
