@@ -1,5 +1,6 @@
-import ScrollReveal from '../bits/ScrollReveal.jsx';
+import ScrollReveal  from '../bits/ScrollReveal.jsx';
 import GradientText  from '../bits/GradientText.jsx';
+import BorderGlow    from '../bits/BorderGlow.jsx';
 
 const FACTS = [
   { n: '3+',  l: 'Years Industry' },
@@ -7,6 +8,13 @@ const FACTS = [
   { n: '🇪🇸',  l: 'Bilbao, Spain'  },
   { n: '7',   l: 'Spoken Languages' },
 ];
+
+// Inline styles matching rp-fact-card layout
+const factInner = {
+  padding: '20px 18px',
+  textAlign: 'center',
+  background: 'transparent',
+};
 
 export default function About() {
   return (
@@ -40,10 +48,22 @@ export default function About() {
           <div className="rp-about-facts">
             {FACTS.map((f, i) => (
               <ScrollReveal key={f.l} delay={i * 80} direction="right">
-                <div className="rp-fact-card">
-                  <span className="rp-fact-n">{f.n}</span>
-                  <span className="rp-fact-l">{f.l}</span>
-                </div>
+                <BorderGlow
+                  animated
+                  edgeSensitivity={29}
+                  borderRadius={12}
+                  glowColor="142 70 55"
+                  backgroundColor="#111f15"
+                  colors={['#22c55e', '#86efac', '#4ade80']}
+                  glowIntensity={0.9}
+                  coneSpread={35}
+                  glowRadius={36}
+                >
+                  <div style={factInner}>
+                    <span className="rp-fact-n">{f.n}</span>
+                    <span className="rp-fact-l">{f.l}</span>
+                  </div>
+                </BorderGlow>
               </ScrollReveal>
             ))}
           </div>

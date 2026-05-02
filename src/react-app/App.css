@@ -24,9 +24,9 @@ body  { background: var(--bg); color: var(--text); font-family: var(--font); lin
 ::-webkit-scrollbar-thumb  { background: var(--accent2); border-radius: 3px; }
 
 /* ── Layout helpers ────────────────────────────────────────────────── */
-.rp-section     { padding: 88px 24px; }
+.rp-section     { padding: 88px 24px; position: relative; overflow: hidden; }
 .rp-section-alt { background: var(--bg2); }
-.rp-container   { max-width: 1100px; margin: 0 auto; }
+.rp-container   { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
 
 .rp-section-title {
   font-family: var(--head);

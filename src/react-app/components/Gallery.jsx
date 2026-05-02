@@ -1,6 +1,7 @@
-import ImageCard  from '../bits/ImageCard.jsx';
-import ScrollReveal from '../bits/ScrollReveal.jsx';
-import GradientText from '../bits/GradientText.jsx';
+import ImageCard    from '../bits/ImageCard.jsx';
+import ScrollReveal  from '../bits/ScrollReveal.jsx';
+import GradientText  from '../bits/GradientText.jsx';
+import Prism         from '../bits/Prism.jsx';
 
 // Sample items — swap `image` for any URL, or remove it to use `gradient`.
 const ITEMS = [
@@ -45,6 +46,7 @@ const ITEMS = [
 export default function Gallery() {
   return (
     <section id="gallery" className="rp-section">
+      <Prism scale={3.1} glow={0.8} bloom={0.8} noise={0.4} timeScale={0.35} />
       <div className="rp-container">
         <ScrollReveal>
           <h2 className="rp-section-title">
