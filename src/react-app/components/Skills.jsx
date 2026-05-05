@@ -1,6 +1,5 @@
-import ScrollReveal   from '../bits/ScrollReveal.jsx';
-import GradientText   from '../bits/GradientText.jsx';
-import FloatingLines  from '../bits/FloatingLines.jsx';
+import ScrollReveal from '../bits/ScrollReveal.jsx';
+import GradientText  from '../bits/GradientText.jsx';
 
 const LANG_ICONS_SRC = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons';
 
@@ -34,16 +33,6 @@ const SPOKEN = [
 export default function Skills() {
   return (
     <section id="skills" className="rp-section">
-      <FloatingLines
-        linesGradient={['#22c55e', '#4ade80', '#86efac', '#16a34a']}
-        enabledWaves={['middle', 'bottom']}
-        lineCount={8}
-        lineDistance={8}
-        animationSpeed={0.5}
-        interactive={false}
-        parallax={false}
-        mixBlendMode="screen"
-      />
       <div className="rp-container">
         <ScrollReveal>
           <h2 className="rp-section-title">

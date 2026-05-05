@@ -1,16 +1,24 @@
-import Aurora      from '../bits/Aurora.jsx';
-import BlurText    from '../bits/BlurText.jsx';
-import GradientText from '../bits/GradientText.jsx';
-import ShinyText   from '../bits/ShinyText.jsx';
+import FloatingLines from '../bits/FloatingLines.jsx';
+import BlurText      from '../bits/BlurText.jsx';
+import GradientText  from '../bits/GradientText.jsx';
+import ShinyText     from '../bits/ShinyText.jsx';
 
 export default function Hero() {
   return (
     <section id="hero" className="rp-hero">
-      <Aurora
-        colorStops={['#061a0d', '#0b4524', '#22c55e']}
-        amplitude={1.1}
-        speed={0.38}
-        blend={0.42}
+      <FloatingLines
+        linesGradient={['#061a0d', '#0b4524', '#22c55e', '#4ade80']}
+        enabledWaves={['middle', 'bottom']}
+        lineCount={10}
+        lineDistance={6}
+        animationSpeed={0.7}
+        interactive
+        bendRadius={3.0}
+        bendStrength={-0.6}
+        mouseDamping={0.04}
+        parallax
+        parallaxStrength={0.12}
+        mixBlendMode="screen"
       />
 
       <div className="rp-hero-content">
