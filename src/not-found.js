@@ -21,12 +21,11 @@ const engine = Engine.create({ gravity: { x: 0, y: 1.6 } });
 const runner  = Runner.create();
 
 // ── Static boundary walls ─────────────────────────────────────────────
-const T = 200;  // wall thickness — large enough to stop tunnelling at speed
-const floor   = Bodies.rectangle(W / 2,     H + T / 2,  W + T * 2, T,     { isStatic: true });
-const wallL   = Bodies.rectangle(-T / 2,    H / 2,      T,         H * 6, { isStatic: true });
-const wallR   = Bodies.rectangle(W + T / 2, H / 2,      T,         H * 6, { isStatic: true });
-const ceiling = Bodies.rectangle(W / 2,    -T / 2,      W + T * 2, T,     { isStatic: true });
-Composite.add(engine.world, [floor, wallL, wallR, ceiling]);
+const T = 80;   // wall thickness (generous — stops fast blocks escaping)
+const floor = Bodies.rectangle(W / 2, H + T / 2,    W * 4, T, { isStatic: true });
+const wallL = Bodies.rectangle(-T / 2,    H / 2, T, H * 4, { isStatic: true });
+const wallR = Bodies.rectangle(W + T / 2, H / 2, T, H * 4, { isStatic: true });
+Composite.add(engine.world, [floor, wallL, wallR]);
 
 // ── Mouse / touch constraint ──────────────────────────────────────────
 const mouse           = Mouse.create(canvas);
@@ -75,7 +74,7 @@ const BW = 108, BH = 108;   // block width / height (px)
 const blocks = BLOCKS.map((def, i) => {
   // Random horizontal position, staggered start heights above viewport
   const x = BW / 2 + 20 + Math.random() * Math.max(W - BW - 40, 1);
-  const y = -(BH / 2 + 20 + i * (BH + 24));   // compact stagger — all well within wall range
+  const y = -(BH / 2 + 60 + i * 180);
 
   const body = Bodies.rectangle(x, y, BW, BH, {
     restitution: 0.30,
@@ -125,10 +124,10 @@ window.addEventListener('resize', () => {
   canvas.width  = W;
   canvas.height = H;
 
-  Body.setPosition(floor,   { x: W / 2,     y: H + T / 2 });
-  Body.setPosition(wallL,   { x: -T / 2,    y: H / 2     });
-  Body.setPosition(wallR,   { x: W + T / 2, y: H / 2     });
-  Body.setPosition(ceiling, { x: W / 2,     y: -T / 2    });
+  // Move walls to new edges
+  Body.setPosition(floor, { x: W / 2, y: H + T / 2    });
+  Body.setPosition(wallL, { x: -T / 2,    y: H / 2 });
+  Body.setPosition(wallR, { x: W + T / 2, y: H / 2 });
 }, { passive: true });
 
 // ── Run ───────────────────────────────────────────────────────────────
