@@ -21,7 +21,7 @@ const engine = Engine.create({ gravity: { x: 0, y: 1.6 } });
 const runner  = Runner.create();
 
 // ── Static boundary walls ─────────────────────────────────────────────
-const T = 240;  // wall thickness (3× original 80) — prevents fast blocks tunnelling through
+const T = 600;  // wall thickness — prevents fast blocks tunnelling through
 const floor = Bodies.rectangle(W / 2, H + T / 2,    W * 4, T,      { isStatic: true });
 const wallL = Bodies.rectangle(-T / 2,    H / 2, T, H * 12, { isStatic: true });
 const wallR = Bodies.rectangle(W + T / 2, H / 2, T, H * 12, { isStatic: true });
