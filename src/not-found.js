@@ -107,6 +107,18 @@ function syncBlocks() {
   }
 }
 
+// ── Respawn blocks that escape below the viewport ─────────────────────
+function respawnOOB() {
+  for (const { body } of blocks) {
+    if (body.position.y > H + T + BH) {
+      const nx = BW / 2 + 20 + Math.random() * Math.max(W - BW - 40, 1);
+      Body.setPosition(body, { x: nx, y: -(BH / 2 + 60) });
+      Body.setVelocity(body, { x: 0, y: 0 });
+      Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.22);
+    }
+  }
+}
+
 // ── Cursor feedback ───────────────────────────────────────────────────
 const allBodies = blocks.map(b => b.body);
 
@@ -132,4 +144,4 @@ window.addEventListener('resize', () => {
 
 // ── Run ───────────────────────────────────────────────────────────────
 Runner.run(runner, engine);
-Events.on(engine, 'afterUpdate', syncBlocks);
+Events.on(engine, 'afterUpdate', () => { syncBlocks(); respawnOOB(); });
